@@ -1,0 +1,33 @@
+{
+  "name": "relay-novel-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "debug": "set NODE_ENV=development&&set DEBUG=app:*&&nodemon src",
+    "dev": "set NODE_ENV=development&&nodemon src",
+    "start": "set NODE_ENV=production&&node src",
+    "lint": "eslint src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "10.3.0"
+  },
+  "author": "Junghoon Park",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "check-types": "^7.4.0",
+    "compression": "^1.7.3",
+    "debug": "^3.1.0",
+    "dotenv": "^6.0.0",
+    "eslint": "^4.19.1",
+    "express": "^4.16.3",
+    "helmet": "^3.12.1",
+    "morgan": "^1.9.0",
+    "path": "^0.12.7",
+    "pbkdf2-password": "^1.2.1",
+    "sharp": "^0.20.8",
+    "winston": "^3.1.0"
+  }
+}
