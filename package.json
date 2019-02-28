@@ -6,7 +6,7 @@
     "debug": "set NODE_ENV=development&&set DEBUG=app:*&&nodemon src",
     "dev": "set NODE_ENV=development&&nodemon src",
     "start": "set NODE_ENV=production&&node src",
-    "lint": "eslint src",
+    "lint": "eslint src --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
@@ -21,7 +21,6 @@
     "compression": "^1.7.3",
     "debug": "^3.1.0",
     "dotenv": "^6.0.0",
-    "eslint": "^4.19.1",
     "express": "^4.16.3",
     "helmet": "^3.12.1",
     "morgan": "^1.9.0",
@@ -30,5 +29,13 @@
     "pbkdf2-password": "^1.2.1",
     "sharp": "^0.20.8",
     "winston": "^3.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.14.1",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0"
   }
 }

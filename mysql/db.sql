@@ -26,8 +26,31 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
   `thumbnail` VARCHAR(255) NULL,
   `isAdmin` TINYINT(1) NOT NULL DEFAULT 0,
   `isBlocked` TINYINT(1) NOT NULL DEFAULT 0,
-  `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `relay_novel`.`Rooms`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `writerLimit` INT NOT NULL DEFAULT 100,
+  `tags` VARCHAR(255) NULL,
+  `title` VARCHAR(255) NULL,
+  `desc` TEXT NULL,
+  `creatorId` VARCHAR(255) NOT NULL,
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  INDEX `idx_rooms_creatorId` (`creatorId` ASC) VISIBLE,
+  CONSTRAINT `fk_rooms_creatorId`
+    FOREIGN KEY (`creatorId`)
+    REFERENCES `relay_novel`.`Users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -35,13 +58,13 @@ ENGINE = InnoDB;
 -- Table `relay_novel`.`RoomJoinedUsers`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsers` (
-  `id` INT NOT NULL AUTO_INCREMENT,
   `userId` VARCHAR(255) NOT NULL,
   `roomId` INT NOT NULL,
-  `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   INDEX `idx_roomJoinedUsers_userId` (`userId` ASC) VISIBLE,
   INDEX `idx_roomJoinedUsers_roomId` (`roomId` ASC) VISIBLE,
+  PRIMARY KEY (`userId`, `roomId`),
   CONSTRAINT `fk_roomJoinedUsers_userId`
     FOREIGN KEY (`userId`)
     REFERENCES `relay_novel`.`Users` (`id`)
@@ -56,27 +79,6 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`Rooms`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `writerLimit` INT NOT NULL DEFAULT 100,
-  `tags` VARCHAR(255) NULL,
-  `title` VARCHAR(255) NULL,
-  `desc` TEXT NULL,
-  `creatorId` VARCHAR(255) NOT NULL,
-  `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_rooms_creatorId` (`creatorId` ASC) VISIBLE,
-  CONSTRAINT `fk_rooms_creatorId`
-    FOREIGN KEY (`creatorId`)
-    REFERENCES `relay_novel`.`RoomJoinedUsers` (`userId`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `relay_novel`.`Sentences`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
@@ -84,7 +86,8 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
   `text` TEXT NULL,
   `roomId` INT NOT NULL,
   `userId` VARCHAR(255) NOT NULL,
-  `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   INDEX `idx_sentences_roomId` (`roomId` ASC) VISIBLE,
   INDEX `idx_sentences_userId` (`userId` ASC) VISIBLE,
@@ -105,11 +108,11 @@ ENGINE = InnoDB;
 -- Table `relay_novel`.`RoomVisitors`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomVisitors` (
-  `id` INT NOT NULL AUTO_INCREMENT,
   `visitorId` VARCHAR(255) NOT NULL,
   `roomId` INT NOT NULL,
-  `date` TIMESTAMP NOT NULL,
-  PRIMARY KEY (`id`),
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`visitorId`, `roomId`),
   INDEX `idx_roomVisitors_visitorId` (`visitorId` ASC) VISIBLE,
   INDEX `idx_roomVisitors_roomId` (`roomId` ASC) VISIBLE,
   CONSTRAINT `fx_roomVisitors_visitorId`
@@ -133,7 +136,8 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `text` TEXT NULL,
   `roomId` INT NOT NULL,
   `userId` VARCHAR(255) NOT NULL,
-  `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   INDEX `idx_comments_userId` (`userId` ASC) INVISIBLE,
   INDEX `idx_comments_roomId` (`roomId` ASC) VISIBLE,
@@ -158,7 +162,8 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Notices` (
   `title` VARCHAR(255) NULL,
   `desc` LONGTEXT NULL,
   `creatorId` VARCHAR(255) NOT NULL,
-  `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   INDEX `idx_notices_creatorId` (`creatorId` ASC) VISIBLE,
   CONSTRAINT `fk_notices_creatorId`

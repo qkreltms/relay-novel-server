@@ -1,14 +1,14 @@
 const mysql = require('mysql')
 
-const db = mysql.createConnection({
-    host : 'localhost',
-    user : 'root',
-    password: 111111,
-    database : 'relay_novel' 
+const db = mysql.createPool({
+  connectionLimit: 10,
+  host: 'localhost',
+  user: 'root',
+  password: 111111,
+  database: 'relay_novel',
+  waitForConnections: true
 })
 
-db.connect()
-
 module.exports = {
-    db
+  db
 }
