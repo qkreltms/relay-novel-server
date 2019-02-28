@@ -1,9 +1,14 @@
 const express = require('express')
 const app = express()
+const router = express.Router()
 
-const init = require('./config')
+const config = require('./config')
 const helmet = require('helmet')
 const bodyParser = require('body-parser')
+// @development
+require('./config/development')(app)
+// @production
+require('./config/production')(app)
 app.use(helmet())
 app.use(express.static('public'))
 app.use(bodyParser.urlencoded({
@@ -12,8 +17,8 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-app.use('/api', require('./routes'))
+app.use('/api', require('./routes')(router))
 
-app.listen(init.port, () => {
-  console.log(`listening port: " ${init.port}...`)
+app.listen(config.port, () => {
+  console.log(`listening port: " ${config.port}...`)
 })
