@@ -1,8 +1,10 @@
 module.exports = (router) => {
   const users = require('../controller/users')
-  const db = require('../config/db').pool
+  const auth = require('../controller/auth')
+  const conn = require('../config/db').pool
 
-  router.use('/users', users(db))
+  router.use('/users', users(conn))
+  router.use('/auth', auth(conn))
 
   return router
 }

@@ -18,7 +18,7 @@ USE `relay_novel` ;
 -- Table `relay_novel`.`Users`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
-  `id` VARCHAR(255) NOT NULL COMMENT 'id는 세션으로 넘어오는 값 넣어줌',
+  `id` INT NOT NULL AUTO_INCREMENT,
   `nickname` VARCHAR(45) NOT NULL,
   `email` VARCHAR(45) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
   `thumbnail` VARCHAR(255) NULL,
   `isAdmin` TINYINT(1) NOT NULL DEFAULT 0,
   `isBlocked` TINYINT(1) NOT NULL DEFAULT 0,
+  `type` ENUM('LOCAL', 'FACEBOOK') NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`))
@@ -41,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
   `tags` VARCHAR(255) NULL,
   `title` VARCHAR(255) NULL,
   `desc` TEXT NULL,
-  `creatorId` VARCHAR(255) NOT NULL,
+  `creatorId` INT NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
@@ -58,7 +59,7 @@ ENGINE = InnoDB;
 -- Table `relay_novel`.`RoomJoinedUsers`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsers` (
-  `userId` VARCHAR(255) NOT NULL,
+  `userId` INT NOT NULL,
   `roomId` INT NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -85,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `text` TEXT NULL,
   `roomId` INT NOT NULL,
-  `userId` VARCHAR(255) NOT NULL,
+  `userId` INT NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
@@ -108,7 +109,7 @@ ENGINE = InnoDB;
 -- Table `relay_novel`.`RoomVisitors`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomVisitors` (
-  `visitorId` VARCHAR(255) NOT NULL,
+  `visitorId` INT NOT NULL,
   `roomId` INT NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -135,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `text` TEXT NULL,
   `roomId` INT NOT NULL,
-  `userId` VARCHAR(255) NOT NULL,
+  `userId` INT NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
@@ -161,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Notices` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(255) NULL,
   `desc` LONGTEXT NULL,
-  `creatorId` VARCHAR(255) NOT NULL,
+  `creatorId` INT NOT NULL,
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
