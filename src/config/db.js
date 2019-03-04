@@ -24,6 +24,10 @@ if (app.get('env') === 'development') {
   pool.on('enqueue', function () {
     console.log('Waiting for available connection slot')
   })
+
+  pool.on('error', (err) => {
+    console.log(err)
+  })
 }
 
 module.exports = {

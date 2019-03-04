@@ -15,5 +15,7 @@ module.exports.INCORRECT_PASSWORD = 'Incorrect password.'
 
 module.exports.ERROR = (err) => ({ status: 'error', message: err })
 
-module.exports.SUCCESS = { status: 'success', message: '' }
-module.exports.SUCCESS = (results) => ({ status: 'success', data: results })
+module.exports.SUCCESS_MSG = { status: 'success', message: '' }
+module.exports.SUCCESS_DATA = (results) => ({ status: 'success', data: results })
+
+module.exports.EMAIL_OR_NICKNAME_IS_ALREADY_EXISTS = 'email or nickname is already exists'

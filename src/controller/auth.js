@@ -16,6 +16,9 @@ module.exports = (conn) => {
     }
   })
 
+  // @desc : login 성공시
+  // @url : http://localhost:3001/api/auth/session/success
+  // @method : GET
   api.get('/session/success', (req, res) => {
     let user = req.user
 

@@ -16,7 +16,6 @@ module.exports = (app) => {
   })
 
   passport.deserializeUser(function (id, done) {
-    console.log('id: ' + id)
     const sql = 'SELECT * FROM users WHERE id = ?'
     const fields = [id]
     const queryCallback = (err, user) => {
@@ -32,7 +31,7 @@ module.exports = (app) => {
     passReqToCallback: true
   }, (req, userEmail, password, done) => {
     const sql = 'SELECT id, salt, password FROM users WHERE email = ?'
-    const fields = [userEmail]
+    const filter = [userEmail]
     const queryCallback = (err, user) => {
       user = user[0]
       if (err) return done(null, false, req.flash('internal_error', err))
@@ -53,7 +52,7 @@ module.exports = (app) => {
       }, hasherCallback)
     }
 
-    conn.query(sql, fields, queryCallback)
+    conn.query(sql, filter, queryCallback)
   }))
 
   // passport.use(new FacebookStrategy({

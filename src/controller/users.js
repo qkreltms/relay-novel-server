@@ -9,42 +9,48 @@ module.exports = (conn) => {
   api.get('/', (req, res) => {
     const sql = 'SELECT * FROM users'
     const queryCallback = (err, results) => {
-      if (err) return res.status(500).json(messages.ERROR(err))
-
-      return res.json(messages.SUCCESS(results[0]))
+      if (err) throw err
+      if (!(results.length > 0)) throw err
+      return res.json(messages.SUCCESS_DATA(results[0]))
     }
 
-    conn.query(sql, queryCallback)
+    try {
+      conn.query(sql, queryCallback)
+    } catch (err) {
+      return res.status(500).json(messages.ERROR(err))
+    }
   })
 
-  api.post('/', async (req, res) => {
-    let email = req.body.email
-    let nickname = req.body.nickname
-    let password = req.body.password
-    let thumbnail = req.file
-    let type = req.body.type
+  api.post('/', (req, res) => {
+    const email = req.body.email
+    const nickname = req.body.nickname
+    const password = req.body.password
+    const thumbnail = req.file
+    const type = req.body.type
 
-    // TODO: 닉네임, 이메일 중복처리
+    const runQuery = (handleErrCallback) => {
+      const hasherCallback = (err, pass, salt, hash) => {
+        if (err) return handleErrCallback(err)
 
-    let hasherCallback = async (err, pass, salt, hash) => {
-      if (err) {
-        return res.status(500).json(messages.ERROR(err))
-      }
+        const sql = `INSERT INTO users SET ?`
+        const fields = { nickname, email, 'password': hash, salt, thumbnail, type }
+        const queryCallback = (err) => {
+          if (err) return handleErrCallback(err)
 
-      const sql = `INSERT INTO users set ?`
-      const fields = { nickname, email, password: hash, salt, thumbnail, type }
-      const queryCallback = (err, results) => {
-        if (err) {
-          return res.status(500).json(messages.ERROR(err))
+          return res.json(messages.SUCCESS_MSG)
         }
-
-        return res.json(messages.SUCCESS)
+        conn.query(sql, fields, queryCallback)
       }
 
-      conn.query(sql, fields, queryCallback)
+      return hasher({ password }, hasherCallback)
     }
 
-    return hasher({ password }, hasherCallback)
+    return runQuery((err) => {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json(messages.ERROR(err))
+      }
+      return res.status(500).json(messages.ERROR(err))
+    })
   })
 
   return api
