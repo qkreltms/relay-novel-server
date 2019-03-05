@@ -3,7 +3,7 @@ module.exports.INVALID_QUERY_PARAMETER = { status: 'error', message: 'Invalid qu
 module.exports.INVALID_POST_REQUEST = { status: 'error', message: 'Invaild post request. Check your data exist or have proper types' }
 
 module.exports.ACCESS_DENIED = { status: 'error', message: 'Access denied. Check whether logged in.' }
-module.exports.SESSION_NOT_FOUND = { status: 'error', message: 'Session not found. Check your loging in.' }
+module.exports.SESSION_NOT_FOUND = { status: 'error', message: 'Session not found. Check you are loging in.' }
 module.exports.UNEXPECTED_FIELD_ERROR = { status: 'error', message: 'Unexpected field error. Check it has proper name' }
 module.exports.CONFLICT_PARAMETER = { status: 'error', message: 'Conflict parameter.' }
 

@@ -1,6 +1,11 @@
-module.exports = (res, messages) => {
+module.exports = (res) => {
+  const messages = require('./messages')
+
   return (err) => {
-    console.warn('@@ERROR CODE@@:', err.code)
+    err = err || {}
+    err.code = err.code || ''
+
+    console.info('@@ERROR CODE@@:', err.code)
     switch (err.code) {
       case 'ER_DUP_ENTRY': {
         return res.status(409).json(messages.ERROR(err))

@@ -2,6 +2,7 @@ module.exports = (conn) => {
   const api = require('express').Router()
   const passport = require('passport')
   const messages = require('../messages')
+  const errorHandler = require('../errorHandler')
 
   // @desc : login 실패시 failureRedircet에 의해 작동되는 라우터
   // @url : http://localhost:3001/api/auth/session/fail
@@ -42,12 +43,19 @@ module.exports = (conn) => {
   // @url : http://localhost:3001/api/auth/session
   // @method : GET
   api.get('/session', (req, res) => {
-    req.session.destroy(err => {
-      res.status(500).json(messages.ERROR(err))
-    }) // 세션 삭제
+    const run = (errHandlerCallback) => {
+      if (!req.user) return res.status(409).json(messages.SESSION_NOT_FOUND)
 
-    req.logout()
-    res.status(200).json(messages.SUCCESS)
+      // 클라이언트 세션 삭제
+      req.session.destroy(err => {
+        if (err) return errHandlerCallback(err)
+      })
+
+      req.logout()
+      return res.status(200).json(messages.SUCCESS_MSG)
+    }
+
+    return run(errorHandler(res))
   })
 
   // @desc : 페이스북 로그인
