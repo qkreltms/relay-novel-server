@@ -1,4 +1,5 @@
 module.exports = (conn) => {
+  const errHandler = require('../errorHandler')
   const api = require('express').Router()
   const hasher = require('pbkdf2-password')()
   const messages = require('../messages')
@@ -7,18 +8,18 @@ module.exports = (conn) => {
   // @url: http://localhost:3001/api/users/
   // @method: GET
   api.get('/', (req, res) => {
-    const sql = 'SELECT * FROM users'
-    const queryCallback = (err, results) => {
-      if (err) throw err
-      if (!(results.length > 0)) throw err
-      return res.json(messages.SUCCESS_DATA(results[0]))
+    const runQuery = async (errHandlerCallback) => {
+      const sql = 'SELECT * FROM users'
+
+      try {
+        const [results] = await conn.query(sql)
+        return res.json(messages.SUCCESS_DATA(results))
+      } catch (err) {
+        if (err) return errHandlerCallback(err)
+      }
     }
 
-    try {
-      conn.query(sql, queryCallback)
-    } catch (err) {
-      return res.status(500).json(messages.ERROR(err))
-    }
+    return runQuery(errHandler)
   })
 
   api.post('/', (req, res) => {
@@ -28,29 +29,25 @@ module.exports = (conn) => {
     const thumbnail = req.file
     const type = req.body.type
 
-    const runQuery = (handleErrCallback) => {
-      const hasherCallback = (err, pass, salt, hash) => {
-        if (err) return handleErrCallback(err)
+    const runQuery = (errHandlerCallback) => {
+      const hasherCallback = async (err, pass, salt, hash) => {
+        if (err) return errHandlerCallback(err)
 
         const sql = `INSERT INTO users SET ?`
         const fields = { nickname, email, 'password': hash, salt, thumbnail, type }
-        const queryCallback = (err) => {
-          if (err) return handleErrCallback(err)
 
+        try {
+          await conn.query(sql, fields)
           return res.json(messages.SUCCESS_MSG)
+        } catch (err) {
+          return errHandlerCallback(err)
         }
-        conn.query(sql, fields, queryCallback)
       }
 
       return hasher({ password }, hasherCallback)
     }
 
-    return runQuery((err) => {
-      if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json(messages.ERROR(err))
-      }
-      return res.status(500).json(messages.ERROR(err))
-    })
+    return runQuery(errHandler(res, messages))
   })
 
   return api

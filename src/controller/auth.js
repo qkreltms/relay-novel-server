@@ -7,13 +7,13 @@ module.exports = (conn) => {
   // @url : http://localhost:3001/api/auth/session/fail
   // @method : GET
   api.get('/session/fail', (req, res) => {
-    if (!req.flash) return
-
-    if (req.flash('internal_error')[0]) {
-      return res.status(500).json(messages.ERROR(req.flash('internal_error')[0]))
-    } else {
-      return res.status(400).json(messages.ERROR(req.flash('error')[0]))
+    const err = {
+      Internal_error: req.flash('Internal_error')[0],
+      error: req.flash('error')[0]
     }
+
+    if (err.Internal_error) return res.status(500).json(messages.ERROR(err.Internal_error))
+    else return res.status(400).json(messages.ERROR(err.error))
   })
 
   // @desc : login 성공시
@@ -22,7 +22,7 @@ module.exports = (conn) => {
   api.get('/session/success', (req, res) => {
     let user = req.user
 
-    res.status(200).json(messages.SUCCESS(user))
+    res.status(200).json(messages.SUCCESS_DATA(user))
   })
 
   // @desc : 로컬 로그인
