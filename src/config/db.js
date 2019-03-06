@@ -1,6 +1,7 @@
 module.exports = async (startDBCallback) => {
   const mysql = require('mysql2')
   const config = require('./')
+  const messages = require('../messages')
   const dbConfig = {
     connectionLimit: 10,
     host: config.DB_HOST,
@@ -9,27 +10,30 @@ module.exports = async (startDBCallback) => {
     database: config.DB_DATABASE,
     waitForConnections: true
   }
+  try {
+    const pool = await mysql.createPool(dbConfig).promise()
+    const app = require('express')()
 
-  const pool = await mysql.createPool(dbConfig).promise()
-  const app = require('express')()
+    if (app.get('env') === 'development') {
+      pool.on('acquire', (connection) => {
+        console.log('Connection %d acquired', connection.threadId)
+      })
 
-  if (app.get('env') === 'development') {
-    pool.on('acquire', (connection) => {
-      console.log('Connection %d acquired', connection.threadId)
-    })
+      pool.on('release', function (connection) {
+        console.log('Connection %d released', connection.threadId)
+      })
 
-    pool.on('release', function (connection) {
-      console.log('Connection %d released', connection.threadId)
-    })
+      pool.on('enqueue', function () {
+        console.log('Waiting for available connection slot')
+      })
 
-    pool.on('enqueue', function () {
-      console.log('Waiting for available connection slot')
-    })
+      pool.on('error', (err) => {
+        console.log(err)
+      })
+    }
 
-    pool.on('error', (err) => {
-      console.log(err)
-    })
+    return startDBCallback(pool)
+  } catch (err) {
+    console.log(messages.ERROR(err))
   }
-
-  return startDBCallback(pool)
 }

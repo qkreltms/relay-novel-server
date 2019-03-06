@@ -2,18 +2,23 @@ module.exports = (app) => {
   const initializeDB = require('./db')
   const passport = require('passport')
   const messages = require('../messages')
-  // const FacebookStrategy = require('passport-facebook').Strategy
+  const FacebookStrategy = require('passport-facebook').Strategy
   const LocalStrategy = require('passport-local').Strategy
   const bkfd2Password = require('pbkdf2-password')
   const hasher = bkfd2Password()
+  const config = require('./')
 
   app.use(passport.initialize())
   app.use(passport.session())
 
   initializeDB((conn) => {
     // 세션 식별 id 쿠기 생성
-    passport.serializeUser(function (user, done) {
-      return done(null, user.id)
+    passport.serializeUser((user, done) => {
+      try {
+        return done(null, user.id)
+      } catch (err) {
+        return done(err)
+      }
     })
 
     passport.deserializeUser(async (id, done) => {
@@ -48,7 +53,7 @@ module.exports = (app) => {
           // 비밀번호 매칭되는지 확인
           if (hash !== user.password) return done(null, false, req.flash('error', messages.INCORRECT_PASSWORD))
 
-          return done(null, user)
+          return done(null, user[0])
         }
 
         return hasher({
@@ -60,37 +65,26 @@ module.exports = (app) => {
       }
     }))
 
-    // passport.use(new FacebookStrategy({
-    //   clientID: init.clientID,
-    //   clientSecret: init.clientSecret,
-    //   callbackURL: '/api/auth/facebook/callback',
-    //   profileFields: ['id', 'name', 'email', 'displayName', 'photos']
-    // }, async function (accessToken, refreshToken, profile, done) {
-    //   let type = 'facebook'
+    passport.use(new FacebookStrategy({
+      clientID: config.FACEBOOK_CLIENT_ID,
+      clientSecret: config.FACEBOOK_CLIENT_SECRET,
+      callbackURL: '/api/auth/facebook/callback',
+      profileFields: ['id', 'name', 'email', 'displayName', 'photos']
+    }, async (accessToken, refreshToken, profile, done) => {
+      const type = 'facebook'
+      const nickname = profile.displayName
+      const email = profile.emails[0].value
+      const thumbnail = profile.photos[0].value
 
-    //   let filter = {
-    //     email: profile.emails[0].value
-    //   }
-    //   let update = {
-    //     $set: {
-    //       type: type,
-    //       email: profile.emails[0].value,
-    //       displayName: profile.displayName,
-    //       profile: profile.photos ? profile.photos[0].value : init.defaultProfile,
-    //       thumbnail: profile.photos ? profile.photos[0].value : init.defaultProfile
-    //     }
-    //   }
-    //   let option = {
-    //     new: true,
-    //     upsert: true
-    //   }
+      try {
+        const fields = { nickname, email, thumbnail, type }
+        await conn.query(`INSERT INTO users SET ?`, fields)
+        const [user] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
 
-  //   try {
-  //     let user = await User.findOneAndUpdate(filter, update, option)
-  //     return done(null, user)
-  //   } catch (err) {
-  //     return done(err)
-  //   }
-  // }))
+        return done(null, user[0])
+      } catch (err) {
+        return done(null, false)
+      }
+    }))
   })
 }

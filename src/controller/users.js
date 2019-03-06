@@ -33,6 +33,7 @@ module.exports = (conn) => {
     const thumbnail = req.file
     const type = req.body.type
 
+    // todo typecheck 및 값 들어왔는지 확인 필수!
     const runQuery = (errHandlerCallback) => {
       const hasherCallback = async (err, pass, salt, hash) => {
         if (err) return errHandlerCallback(err)

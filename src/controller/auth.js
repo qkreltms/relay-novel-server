@@ -62,14 +62,15 @@ module.exports = (conn) => {
   // @url : http://localhost:3001/api/auth/facebook
   // @method : GET
   api.get('/facebook', passport.authenticate('facebook', {
-    scope: 'email'
+    scope: 'email',
+    failWithError: true
   }))
 
   // @desc : 페이스북 로그인 실패, 성공시 거쳐가는 콜백
   // @url : http://localhost:3001/api/auth/facebook/callback'
   // @method : GET
   api.get('/facebook/callback', passport.authenticate('facebook', {
-    successRedirect: '/api/users/me',
+    successRedirect: '/api/auth/session/success',
     failureRedirect: '/api/auth/facebook/fail'
   }))
 

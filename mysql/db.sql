@@ -19,10 +19,10 @@ USE `relay_novel` ;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `nickname` VARCHAR(45) NOT NULL,
+  `nickname` VARCHAR(45) NULL,
   `email` VARCHAR(45) NOT NULL,
-  `password` VARCHAR(255) NOT NULL,
-  `salt` VARCHAR(255) NOT NULL,
+  `password` VARCHAR(255) NULL,
+  `salt` VARCHAR(255) NULL,
   `thumbnail` VARCHAR(255) NULL,
   `isAdmin` TINYINT(1) NOT NULL DEFAULT 0,
   `isBlocked` TINYINT(1) NOT NULL DEFAULT 0,
@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `nickname_UNIQUE` (`nickname` ASC) VISIBLE,
   UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE)
 ENGINE = InnoDB;
 

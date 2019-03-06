@@ -7,7 +7,7 @@ module.exports.SESSION_NOT_FOUND = { status: 'error', message: 'Session not foun
 module.exports.UNEXPECTED_FIELD_ERROR = { status: 'error', message: 'Unexpected field error. Check it has proper name' }
 module.exports.CONFLICT_PARAMETER = { status: 'error', message: 'Conflict parameter.' }
 
-module.exports.FACEBOOK_LOGIN_FAIL = { status: 'error', message: 'Facebook login fail.' }
+module.exports.FACEBOOK_LOGIN_FAIL = { status: 'error', message: 'Facebook login failed.' }
 module.exports.LOCAL_LOGIN_FAIL = { status: 'error', message: 'Local login fail.' }
 
 module.exports.INCORRECT_USERNAME = 'Incorrect username.'
