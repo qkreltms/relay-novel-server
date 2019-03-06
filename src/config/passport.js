@@ -24,7 +24,6 @@ module.exports = (app) => {
     passport.deserializeUser(async (id, done) => {
       const sql = 'SELECT * FROM users WHERE id = ?'
       const fields = [id]
-
       try {
         const [user] = await conn.query(sql, fields)
         return done(null, user[0])
@@ -53,7 +52,7 @@ module.exports = (app) => {
           // 비밀번호 매칭되는지 확인
           if (hash !== user.password) return done(null, false, req.flash('error', messages.INCORRECT_PASSWORD))
 
-          return done(null, user[0])
+          return done(null, user)
         }
 
         return hasher({
@@ -71,19 +70,25 @@ module.exports = (app) => {
       callbackURL: '/api/auth/facebook/callback',
       profileFields: ['id', 'name', 'email', 'displayName', 'photos']
     }, async (accessToken, refreshToken, profile, done) => {
+      console.log('Is it works??')
       const type = 'facebook'
       const nickname = profile.displayName
       const email = profile.emails[0].value
       const thumbnail = profile.photos[0].value
-
       try {
+        let [existsUser] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
+        existsUser = existsUser[0]
+        // 유저가 이미 존재하면
+        if (existsUser) return done(null, existsUser)
+
         const fields = { nickname, email, thumbnail, type }
         await conn.query(`INSERT INTO users SET ?`, fields)
-        const [user] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
+        let [createdUser] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
+        createdUser = createdUser[0]
 
-        return done(null, user[0])
+        return done(null, createdUser)
       } catch (err) {
-        return done(null, false)
+        return done(err)
       }
     }))
   })

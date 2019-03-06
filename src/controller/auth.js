@@ -3,6 +3,7 @@ module.exports = (conn) => {
   const passport = require('passport')
   const messages = require('../messages')
   const errorHandler = require('../errorHandler')
+  const config = require('../config')
 
   // @desc : login 실패시 failureRedircet에 의해 작동되는 라우터
   // @url : http://localhost:3001/api/auth/session/fail
@@ -50,6 +51,8 @@ module.exports = (conn) => {
       req.session.destroy(err => {
         if (err) return errHandlerCallback(err)
       })
+      // 클라이언트 세션 쿠기 삭제
+      res.clearCookie(config.SESSION_COOKIE_KEY)
 
       req.logout()
       return res.status(200).json(messages.SUCCESS_MSG)
@@ -62,8 +65,7 @@ module.exports = (conn) => {
   // @url : http://localhost:3001/api/auth/facebook
   // @method : GET
   api.get('/facebook', passport.authenticate('facebook', {
-    scope: 'email',
-    failWithError: true
+    scope: 'email'
   }))
 
   // @desc : 페이스북 로그인 실패, 성공시 거쳐가는 콜백

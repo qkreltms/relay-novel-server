@@ -18,6 +18,7 @@ module.exports = (app) => {
     createDatabaseTable: true
   }
   const sessionOpt = {
+    name: config.SESSION_COOKIE_KEY,
     secret: config.SESSION_SECRET_KEY,
     resave: false,
     saveUninitialized: true,
@@ -25,7 +26,8 @@ module.exports = (app) => {
     cookie: {
       maxAge: expiry,
       httpOnly: true
-    }
+    },
+    unset: 'destroy'
   }
 
   app.use(session(sessionOpt))
