@@ -63,8 +63,6 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        await conn.query('DELETE FROM users WHERE email = ?', [email])
-
         // 클라이언트 세션 삭제
         req.session.destroy(err => {
           if (err) return errHandlerCallback(err)
@@ -72,6 +70,8 @@ module.exports = (conn) => {
         // 클라이언트 세션 쿠기 삭제
         res.clearCookie(config.SESSION_COOKIE_KEY)
         req.logout()
+        
+        await conn.query('DELETE FROM users WHERE email = ?', [email])
 
         return res.status(200).json(messages.SUCCESS_MSG)
       } catch (err) {

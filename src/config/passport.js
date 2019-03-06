@@ -14,6 +14,7 @@ module.exports = (app) => {
   initializeDB((conn) => {
     // 세션 식별 id 쿠기 생성
     passport.serializeUser((user, done) => {
+      console.log('test')
       try {
         return done(null, user.id)
       } catch (err) {
@@ -26,6 +27,8 @@ module.exports = (app) => {
       const fields = [id]
       try {
         const [user] = await conn.query(sql, fields)
+        if (user.length === 0) return done(null, false)
+
         return done(null, user[0])
       } catch (err) {
         return done(err)
