@@ -14,7 +14,6 @@ module.exports = (app) => {
   initializeDB((conn) => {
     // 세션 식별 id 쿠기 생성
     passport.serializeUser((user, done) => {
-      console.log('test')
       try {
         return done(null, user.id)
       } catch (err) {
@@ -27,6 +26,7 @@ module.exports = (app) => {
       const fields = [id]
       try {
         const [user] = await conn.query(sql, fields)
+        // 유저가 없을 경우
         if (user.length === 0) return done(null, false)
 
         return done(null, user[0])
@@ -73,7 +73,6 @@ module.exports = (app) => {
       callbackURL: '/api/auth/facebook/callback',
       profileFields: ['id', 'name', 'email', 'displayName', 'photos']
     }, async (accessToken, refreshToken, profile, done) => {
-      console.log('Is it works??')
       const type = 'facebook'
       const nickname = profile.displayName
       const email = profile.emails[0].value

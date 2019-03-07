@@ -19,11 +19,11 @@ module.exports = async (startDBCallback) => {
         console.log('Connection %d acquired', connection.threadId)
       })
 
-      pool.on('release', function (connection) {
+      pool.on('release', (connection) => {
         console.log('Connection %d released', connection.threadId)
       })
 
-      pool.on('enqueue', function () {
+      pool.on('enqueue', () => {
         console.log('Waiting for available connection slot')
       })
 

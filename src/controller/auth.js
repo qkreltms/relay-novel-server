@@ -2,7 +2,7 @@ module.exports = (conn) => {
   const api = require('express').Router()
   const passport = require('passport')
   const messages = require('../messages')
-  const errorHandler = require('../errorHandler')
+  const errorHandler = require('../queryErrorHandler')
   const config = require('../config')
 
   // @desc : login 실패시 failureRedircet에 의해 작동되는 라우터

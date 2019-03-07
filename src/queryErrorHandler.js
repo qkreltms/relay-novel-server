@@ -3,9 +3,14 @@ module.exports = (res) => {
 
   return (err) => {
     err = err || {}
-    err.code = err.code || ''
+    err = {
+      code: err.code || '',
+      name: err.name || '',
+      message: err.message || '',
+      stack: err.stack || ''
+    }
+    console.info('@@ERROR@@:', err)
 
-    console.info('@@ERROR CODE@@:', err.code)
     switch (err.code) {
       case 'ER_DUP_ENTRY': {
         return res.status(409).json(messages.ERROR(err))

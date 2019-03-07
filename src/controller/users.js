@@ -1,5 +1,5 @@
 module.exports = (conn) => {
-  const errHandler = require('../errorHandler')
+  const errHandler = require('../queryErrorHandler')
   const api = require('express').Router()
   const hasher = require('pbkdf2-password')()
   const messages = require('../messages')
@@ -20,7 +20,7 @@ module.exports = (conn) => {
       }
     }
 
-    return runQuery(errHandler)
+    return runQuery(errHandler(res))
   })
 
   // @desc: 유저 생성
@@ -70,7 +70,7 @@ module.exports = (conn) => {
         // 클라이언트 세션 쿠기 삭제
         res.clearCookie(config.SESSION_COOKIE_KEY)
         req.logout()
-        
+
         await conn.query('DELETE FROM users WHERE email = ?', [email])
 
         return res.status(200).json(messages.SUCCESS_MSG)
@@ -79,7 +79,7 @@ module.exports = (conn) => {
       }
     }
 
-    return runQuery(errHandler)
+    return runQuery(errHandler(res))
   })
 
   // @desc : 자신의 유저 정보 가져오기
