@@ -15,6 +15,8 @@ module.exports.USER_IS_ALREADY_EXISTS = { status: 'warn', message: 'User is alre
 module.exports.INCORRECT_USERNAME = 'Incorrect username.'
 module.exports.INCORRECT_PASSWORD = 'Incorrect password.'
 
+module.exports.NOT_ADMIN = { status: 'warn', message: 'Not admin' }
+
 module.exports.ERROR = (err) => ({ status: 'error', message: err })
 
 module.exports.SUCCESS_MSG = { status: 'success', message: '' }

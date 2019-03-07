@@ -65,7 +65,7 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = 'DELETE FROM rooms WHERE userId = ?, roomId = ?'
+        const sql = 'DELETE FROM rooms WHERE userId = ? AND roomId = ?'
         const fields = { userId, roomId }
         await conn.query(sql, fields)
 

@@ -89,9 +89,7 @@ module.exports = (conn) => {
     const user = req.user
 
     try {
-      return res.status(200).json({
-        data: user
-      })
+      return res.status(200).json(messages.SUCCESS_DATA(user))
     } catch (err) {
       return res.status(500).json(messages.ERROR(err))
     }
