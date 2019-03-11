@@ -24,7 +24,7 @@ module.exports = (conn) => {
   api.get('/session/success', (req, res) => {
     let user = req.user
 
-    res.status(200).json(messages.SUCCESS_DATA(user))
+    res.status(200).json(messages.SUCCESS(user))
   })
 
   // @desc : 로컬 로그인
@@ -55,7 +55,7 @@ module.exports = (conn) => {
       res.clearCookie(config.SESSION_COOKIE_KEY)
 
       req.logout()
-      return res.status(200).json(messages.SUCCESS_MSG)
+      return res.status(200).json(messages.SUCCESS())
     }
 
     return run(errorHandler(res))

@@ -17,9 +17,10 @@ module.exports.INCORRECT_PASSWORD = 'Incorrect password.'
 
 module.exports.NOT_ADMIN = { status: 'warn', message: 'Not admin' }
 
+module.exports.NOTHING_TO_DELETE = 'Nothing to delete. Item is not exists'
+
 module.exports.ERROR = (err) => ({ status: 'error', message: err })
 
-module.exports.SUCCESS_MSG = { status: 'success', message: '' }
-module.exports.SUCCESS_DATA = (results) => ({ status: 'success', data: results })
+module.exports.SUCCESS = (message = '', affectedRows = 0) => ({ status: 'success', message, affectedRows })
 
 module.exports.EMAIL_OR_NICKNAME_IS_ALREADY_EXISTS = 'email or nickname is already exists'

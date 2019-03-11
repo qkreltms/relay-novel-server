@@ -9,12 +9,13 @@ module.exports = (conn) => {
   // @desc: 모든 users 값 가져옴
   // @url: http://localhost:3001/api/users/
   // @method: GET
+  // TODO: 한번에 30개씩 개수제한
   api.get('/', (req, res) => {
     const runQuery = async (errHandlerCallback) => {
       try {
         const [results] = await conn.query('SELECT * FROM users')
 
-        return res.json(messages.SUCCESS_DATA(results))
+        return res.json(messages.SUCCESS(results))
       } catch (err) {
         if (err) return errHandlerCallback(err)
       }
@@ -46,7 +47,7 @@ module.exports = (conn) => {
           const fields = { nickname, email, 'password': hash, salt, thumbnail }
           await conn.query('INSERT INTO users SET ?', fields)
 
-          return res.json(messages.SUCCESS_MSG)
+          return res.json(messages.SUCCESS())
         } catch (err) {
           return errHandlerCallback(err)
         }
@@ -71,9 +72,9 @@ module.exports = (conn) => {
         res.clearCookie(config.SESSION_COOKIE_KEY)
         req.logout()
 
-        await conn.query('DELETE FROM users WHERE email = ?', [email])
+        const [{ affectedRows }] = await conn.query('DELETE FROM users WHERE email = ?', [email])
 
-        return res.status(200).json(messages.SUCCESS_MSG)
+        return res.status(200).json(messages.SUCCESS('', affectedRows))
       } catch (err) {
         errHandlerCallback(err)
       }
@@ -89,7 +90,7 @@ module.exports = (conn) => {
     const user = req.user
 
     try {
-      return res.status(200).json(messages.SUCCESS_DATA(user))
+      return res.status(200).json(messages.SUCCESS(user))
     } catch (err) {
       return res.status(500).json(messages.ERROR(err))
     }
