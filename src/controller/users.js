@@ -6,24 +6,6 @@ module.exports = (conn) => {
   const { checkLoggedIn } = require('../middleware/authenticate')
   const config = require('../config')
 
-  // @desc: 모든 users 값 가져옴
-  // @url: http://localhost:3001/api/users/
-  // @method: GET
-  // TODO: 한번에 30개씩 개수제한
-  api.get('/', (req, res) => {
-    const runQuery = async (errHandlerCallback) => {
-      try {
-        const [results] = await conn.query('SELECT * FROM users')
-
-        return res.json(messages.SUCCESS(results))
-      } catch (err) {
-        if (err) return errHandlerCallback(err)
-      }
-    }
-
-    return runQuery(errHandler(res))
-  })
-
   // @desc: 유저 생성
   // @url: http://localhost:3001/api/users/
   // @method: POST

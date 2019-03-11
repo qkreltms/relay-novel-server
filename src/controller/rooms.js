@@ -3,12 +3,16 @@ module.exports = (conn) => {
   const { checkLoggedIn } = require('../middleware/authenticate')
   const api = require('express').Router()
   const errHandler = require('../queryErrorHandler')
-  // 방문한 유저 찾기
-  api.get('/join', (req, res) => {
-    const userId = req.body.userId
-    const roomId = req.body.roomId
-    const skip = req.body.skip || 0
-    const limit = req.body.limit || 30
+
+  // @desc : 주어진 방에 방문한 모든 유저 출력
+  // @url : http://localhost:3001/api/rooms/all
+  // @method : GET
+  // @query : skip: String, limit: String
+  api.get('/visit', (req, res) => {
+    const userId = req.query.userId
+    const roomId = req.query.roomId
+    const skip = req.query.skip || 0
+    const limit = req.query.limit || 30
 
     const runQuery = async (errHandlerCallback) => {
       try {
@@ -24,10 +28,13 @@ module.exports = (conn) => {
 
     return runQuery(errHandler(res))
   })
-  // 모든 방 출력
-  api.get('/', (req, res) => {
-    const skip = req.body.skip || 0
-    const limit = req.body.limit || 30
+  // @desc : 모든 방 출력
+  // @url : http://localhost:3001/api/rooms/all
+  // @method : GET
+  // @query : skip: String, limit: String
+  api.get('/all', (req, res) => {
+    const skip = req.query.skip || 0
+    const limit = req.query.limit || 30
 
     const runQuery = async (errHandlerCallback) => {
       try {
@@ -43,11 +50,14 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
-  // 유저가 방장인 방 찾음
+  // @desc : 주어진 유저가 방장인 방 출력
+  // @url : http://localhost:3001/api/rooms
+  // @method : GET
+  // @query : userId: String, skip: String, limit: String
   api.get('/', (req, res) => {
-    const userId = req.body.userId
-    const skip = req.body.skip || 0
-    const limit = req.body.limit || 30
+    const userId = req.query.userId
+    const skip = req.query.skip || 0
+    const limit = req.query.limit || 30
 
     const runQuery = async (errHandlerCallback) => {
       try {
@@ -64,12 +74,15 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
-  // 방에 누가 참가했는지
+  // @desc : 주어진 방에 누가 참가했는지 출력
+  // @url : http://localhost:3001/api/rooms/join
+  // @method : GET
+  // @query : userId: String, roomId: String, skip: String, limit: String
   api.get('/join', (req, res) => {
-    const userId = req.body.userId
-    const roomId = req.body.roomId
-    const skip = req.body.skip || 0
-    const limit = req.body.limit || 30
+    const userId = req.query.userId
+    const roomId = req.query.roomId
+    const skip = req.query.skip || 0
+    const limit = req.query.limit || 30
 
     const runQuery = async (errHandlerCallback) => {
       try {
@@ -86,6 +99,10 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
+  // @desc : 방 생성
+  // @url : http://localhost:3001/api/rooms
+  // @method : POST
+  // @query : writerLimit?: String, tags?: String, title: String, desc: String
   api.post('/', checkLoggedIn, (req, res) => {
     const writerLimit = req.body.writerLimit
     const tags = req.body.tags
