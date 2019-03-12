@@ -7,7 +7,7 @@ module.exports = (router) => {
 
   initializeDB((conn) => {
     router.use('/users', users(conn))
-    router.use('/auth', auth(conn))
+    router.use('/auth', auth())
     router.use('/rooms', rooms(conn))
     router.use('/sentences', sentences(conn))
   })

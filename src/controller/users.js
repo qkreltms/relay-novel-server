@@ -21,8 +21,7 @@ module.exports = (conn) => {
         if (err) return errHandlerCallback(err)
 
         try {
-          let [existsUser] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
-          existsUser = existsUser[0]
+          let [[existsUser]] = await conn.query(`SELECT id FROM users WHERE email = ?`, [email])
           // 유저가 이미 존재하면
           if (existsUser) return res.status(409).json(messages.USER_IS_ALREADY_EXISTS)
 

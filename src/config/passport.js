@@ -13,23 +13,23 @@ module.exports = (app) => {
 
   initializeDB((conn) => {
     // 세션 식별 id 쿠기 생성
-    passport.serializeUser((user, done) => {
+    passport.serializeUser((userId, done) => {
       try {
-        return done(null, user.id)
+        return done(null, userId)
       } catch (err) {
         return done(err)
       }
     })
 
     passport.deserializeUser(async (id, done) => {
-      const sql = 'SELECT * FROM users WHERE id = ?'
-      const fields = [id]
+      const sql = 'SELECT ??, ??, ??, ??, ??, ??, ??, ??, ?? FROM users WHERE id = ?'
+      const fields = ['id', 'nickname', 'email', 'thumbnail', 'isAdmin', 'isBlocked', 'type', 'updatedAt', 'createdAt', id]
       try {
-        const [user] = await conn.query(sql, fields)
-        // 유저가 없을 경우
-        if (user.length === 0) return done(null, false)
+        const [[user]] = await conn.query(sql, fields)
+        // 유저가 없을 경우 종료
+        if (!user) return done(null, false)
 
-        return done(null, user[0])
+        return done(null, user)
       } catch (err) {
         return done(err)
       }
@@ -40,12 +40,11 @@ module.exports = (app) => {
       passwordField: 'password',
       passReqToCallback: true
     }, async (req, userEmail, password, done) => {
-      const sql = 'SELECT id, salt, password FROM users WHERE email = ?'
-      const filter = [userEmail]
+      const sql = 'SELECT id, salt, password FROM users WHERE email = ? AND type = ?'
+      const filter = [userEmail, 'local']
 
       try {
-        let [user] = await conn.query(sql, filter)
-        user = user[0]
+        let [[user]] = await conn.query(sql, filter)
 
         // 이메일 매칭되서 유저 값 받았는지 확인
         if (!user) return done(null, false, req.flash('error', messages.INCORRECT_USERNAME))
@@ -55,7 +54,7 @@ module.exports = (app) => {
           // 비밀번호 매칭되는지 확인
           if (hash !== user.password) return done(null, false, req.flash('error', messages.INCORRECT_PASSWORD))
 
-          return done(null, user)
+          return done(null, user.id)
         }
 
         return hasher({
@@ -78,17 +77,14 @@ module.exports = (app) => {
       const email = profile.emails[0].value
       const thumbnail = profile.photos[0].value
       try {
-        let [existsUser] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
-        existsUser = existsUser[0]
-        // 유저가 이미 존재하면
-        if (existsUser) return done(null, existsUser)
+        let [[existsUser]] = await conn.query(`SELECT id FROM users WHERE email = ? AND type = ?`, [email, type])
+        // 유저가 이미 존재하면 빠져나감
+        if (existsUser) return done(null, existsUser.id)
 
         const fields = { nickname, email, thumbnail, type }
-        await conn.query(`INSERT INTO users SET ?`, fields)
-        let [createdUser] = await conn.query(`SELECT * FROM users WHERE email = ?`, [email])
-        createdUser = createdUser[0]
+        const [result] = await conn.query(`INSERT INTO users SET ?`, fields)
 
-        return done(null, createdUser)
+        return done(null, result.insertId)
       } catch (err) {
         return done(err)
       }

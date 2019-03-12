@@ -1,4 +1,4 @@
-module.exports = (conn) => {
+module.exports = () => {
   const api = require('express').Router()
   const passport = require('passport')
   const messages = require('../messages')
@@ -23,7 +23,6 @@ module.exports = (conn) => {
   // @method : GET
   api.get('/session/success', (req, res) => {
     let user = req.user
-
     res.status(200).json(messages.SUCCESS(user))
   })
 

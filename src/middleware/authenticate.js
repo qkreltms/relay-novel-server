@@ -18,10 +18,8 @@ const checkLoggedOut = (req, res, next) => {
 
 // 어드민 확인
 const checkIsAdmin = (req, res, next) => {
-  checkLoggedIn(req, res, next)
-
   if (req.user.isAdmin) return next()
-  else return res.status(409).json(messages.NOT_ADMIN)
+  return res.status(409).json(messages.NOT_ADMIN)
 }
 
 module.exports = {

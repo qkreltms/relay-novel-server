@@ -1,8 +1,27 @@
 module.exports = (conn) => {
   const api = require('express').Router()
-  const { checkLoggedIn, checkIsAdmin } = require('../middleware/authenticate')
+  const { checkLoggedIn } = require('../middleware/authenticate')
   const messages = require('../messages')
   const errorHandler = require('../queryErrorHandler')
+  api.get('/', (req, res) => {
+    const roomId = req.query.roomId
+    const skip = req.query.skip || 0
+    const limit = req.query.limit || 30
+
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `SELECT id, text, userId, updatedAt FROM sentences WHERE roomId = ? ORDER BY updatedAt ASC LIMIT ${skip}, ${limit}`
+        const filters = [roomId]
+        const [result] = await conn.query(sql, filters)
+
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errorHandler(res))
+  })
 
   api.post('/', checkLoggedIn, (req, res) => {
     const text = req.body.text
@@ -24,44 +43,49 @@ module.exports = (conn) => {
     return runQuery(errorHandler(res))
   })
 
-  api.delete('/', checkIsAdmin, (req, res) => {
-    const userId = req.body.userId
-    const roomId = req.body.roomId
+  // api.delete('/', (req, res) => {
+  //   const sentenceId = req.body.sentenceId
+  //   const userId = req.user.id
+  //   const roomId = req.body.roomId
 
-    const runQuery = async (errHandlerCallback) => {
-      try {
-        const sql = 'DELETE FROM sentences WHERE userId = ? AND roomId = ?'
-        const fields = { userId, roomId }
-        const [{ affectedRows }] = await conn.query(sql, fields)
+  //   const runQuery = async (errHandlerCallback) => {
+  //     try {
+  //       const sql = `SELECT CAST( CASE creatorId WHEN ? THEN 1 ELSE 0 END AS BINARY ) AS isCreator FROM rooms WHERE id = ?`
+  //       const filter = [ userId, roomId ]
+  //       const result = await conn.query(sql, filter)
+  //       console.log(result)
 
-        return res.json(messages.SUCCESS('', affectedRows))
-      } catch (err) {
-        return errHandlerCallback(err)
-      }
-    }
+  //       const sql2 = 'DELETE FROM sentences WHERE id = ?'
+  //       const filters2 = [ sentenceId ]
+  //       const [{ affectedRows }] = await conn.query(sql2, filters2)
 
-    return runQuery(errorHandler(res))
-  })
+  //       return res.json(messages.SUCCESS('', affectedRows))
+  //     } catch (err) {
+  //       return errHandlerCallback(err)
+  //     }
+  //   }
 
-  api.patch('/', checkIsAdmin, (req, res) => {
-    const userId = req.body.userId
-    const roomId = req.body.roomId
-    const text = req.body.text
+  //   return runQuery(errorHandler(res))
+  // })
 
-    const runQuery = async (errHandlerCallback) => {
-      try {
-        const sql = 'UPDATE sentences SET text = ? WHERE userId = ? AND roomId = ?'
-        const fields = { text, userId, roomId }
-        const [{ affectedRows }] = await conn.query(sql, fields)
+  // api.patch('/', (req, res) => {
+  //   const sentenceId = req.body.sentenceId
+  //   const text = req.body.text
 
-        return res.json(messages.SUCCESS('', affectedRows))
-      } catch (err) {
-        return errHandlerCallback(err)
-      }
-    }
+  //   const runQuery = async (errHandlerCallback) => {
+  //     try {
+  //       const sql = 'UPDATE sentences SET text = ? WHERE id = ?'
+  //       const filters = [ text, sentenceId ]
+  //       const [{ affectedRows }] = await conn.query(sql, filters)
 
-    return runQuery(errorHandler(res))
-  })
+  //       return res.json(messages.SUCCESS('', affectedRows))
+  //     } catch (err) {
+  //       return errHandlerCallback(err)
+  //     }
+  //   }
+
+  //   return runQuery(errorHandler(res))
+  // })
 
   return api
 }

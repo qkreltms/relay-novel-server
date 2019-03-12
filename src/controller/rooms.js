@@ -16,7 +16,7 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT * FROM roomVisitors WHERE visitorId = ? AND roomId = ? LIMIT ${skip}, ${limit}`
+        const sql = `SELECT updatedAt, createdAt FROM roomVisitors WHERE visitorId = ? AND roomId = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
         const filters = [ userId, roomId ]
         const [result] = await conn.query(sql, filters)
 
@@ -38,7 +38,7 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT * FROM rooms LIMIT ${skip}, ${limit}`
+        const sql = `SELECT id, writerLimit, tags, title, 'desc', creatorId, updatedAt, createdAt FROM rooms ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
         const [result] = await conn.query(sql)
 
         return res.json(messages.SUCCESS(result))
@@ -61,7 +61,7 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT * FROM rooms WHERE creatorId = ? LIMIT ${skip}, ${limit}`
+        const sql = `SELECT id, writerLimit, tags, title, 'desc', updatedAt, createdAt FROM rooms WHERE creatorId = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
         const filters = [ userId ]
         const [result] = await conn.query(sql, filters)
 
@@ -86,7 +86,7 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT * FROM roomJoinedUsers WHERE userId = ? AND roomId = ? LIMIT ${skip}, ${limit}`
+        const sql = `SELECT createdAt, updatedAt FROM roomJoinedUsers WHERE userId = ? AND roomId = ? ORDER BY updatedAt DESC LIMIT ${skip}, ${limit}`
         const filters = [ userId, roomId ]
         const [result] = await conn.query(sql, filters)
 
