@@ -40,6 +40,22 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
+  api.get('/email', (req, res) => {
+    const email = req.query.email
+
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const [result] = await conn.query('SELECT email FROM users WHERE email = ?', [email])
+
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
+
   api.delete('/', (req, res) => {
     const email = req.body.email
 

@@ -20,6 +20,7 @@
     "check-types": "^7.4.0",
     "compression": "^1.7.3",
     "connect-flash": "^0.1.1",
+    "cors": "^2.8.5",
     "debug": "^3.1.0",
     "dotenv": "^6.0.0",
     "express": "^4.16.3",

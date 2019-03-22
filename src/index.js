@@ -3,6 +3,7 @@ const app = express()
 const router = express.Router()
 
 const config = require('./config')
+const cors = require('cors')
 const helmet = require('helmet')
 const bodyParser = require('body-parser')
 const flash = require('connect-flash')
@@ -14,6 +15,8 @@ require('./config/passport')(app)
 require('./config/development')(app)
 // @production
 require('./config/production')(app)
+
+app.use(cors())
 app.use(flash())
 app.use(helmet())
 app.use(express.static('public'))
