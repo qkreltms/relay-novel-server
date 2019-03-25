@@ -10,7 +10,7 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT id, text, userId, updatedAt FROM sentences WHERE roomId = ? ORDER BY updatedAt ASC LIMIT ${skip}, ${limit}`
+        const sql = `SELECT id, text, userId, updatedAt, like FROM sentences WHERE roomId = ? ORDER BY updatedAt ASC LIMIT ${skip}, ${limit}`
         const filters = [roomId]
         const [result] = await conn.query(sql, filters)
 
