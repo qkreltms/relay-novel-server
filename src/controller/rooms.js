@@ -52,5 +52,9 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
+  api.post('/likeDislikes', (req, res) => {
+
+  })
+
   return api
 }
