@@ -10,7 +10,7 @@ module.exports.CONFLICT_PARAMETER = { status: 'error', message: 'Conflict parame
 module.exports.FACEBOOK_LOGIN_FAIL = { status: 'error', message: 'Facebook login failed.' }
 module.exports.LOCAL_LOGIN_FAIL = { status: 'error', message: 'Local login fail.' }
 
-module.exports.USER_IS_ALREADY_EXISTS = { status: 'info', message: 'User is already exists.' }
+module.exports.USER_IS_ALREADY_EXISTS = { status: 'info', message: 'User is already exists. Check your email or nickname' }
 
 module.exports.INCORRECT_USERNAME = 'Incorrect username.'
 module.exports.INCORRECT_PASSWORD = 'Incorrect password.'

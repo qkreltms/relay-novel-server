@@ -4,7 +4,19 @@ module.exports = (conn) => {
   const hasher = require('pbkdf2-password')()
   const messages = require('../messages')
   const { checkLoggedIn } = require('../middleware/authenticate')
-  const config = require('../config')
+
+  // @desc : 자신의 유저 정보 가져오기
+  // @url : http://localhost:3001/api/users/me
+  // @method : GET
+  api.get('/me', checkLoggedIn, async (req, res) => {
+    const user = req.user
+
+    try {
+      return res.status(200).json(messages.SUCCESS(user))
+    } catch (err) {
+      return res.status(500).json(messages.ERROR(err))
+    }
+  })
 
   // @desc: 유저 생성
   // @url: http://localhost:3001/api/users/
@@ -15,7 +27,6 @@ module.exports = (conn) => {
     const password = req.body.password
     const thumbnail = req.file
 
-    // todo typecheck 및 값 들어왔는지 확인 필수!
     const runQuery = (errHandlerCallback) => {
       const hasherCallback = async (err, pass, salt, hash) => {
         if (err) return errHandlerCallback(err)
@@ -56,42 +67,30 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
-  api.delete('/', (req, res) => {
-    const email = req.body.email
+  // TODO: delete to update and set empty.
+  // api.delete('/', (req, res) => {
+  //   const email = req.body.email
 
-    const runQuery = async (errHandlerCallback) => {
-      try {
-        // 클라이언트 세션 삭제
-        req.session.destroy(err => {
-          if (err) return errHandlerCallback(err)
-        })
-        // 클라이언트 세션 쿠기 삭제
-        res.clearCookie(config.SESSION_COOKIE_KEY)
-        req.logout()
+  //   const runQuery = async (errHandlerCallback) => {
+  //     try {
+  //       // 클라이언트 세션 삭제
+  //       req.session.destroy(err => {
+  //         if (err) return errHandlerCallback(err)
+  //       })
+  //       // 클라이언트 세션 쿠기 삭제
+  //       res.clearCookie(config.SESSION_COOKIE_KEY)
+  //       req.logout()
 
-        const [{ affectedRows }] = await conn.query('DELETE FROM users WHERE email = ?', [email])
+  //       const [{ affectedRows }] = await conn.query('DELETE FROM users WHERE email = ?', [email])
 
-        return res.status(200).json(messages.SUCCESS('', affectedRows))
-      } catch (err) {
-        errHandlerCallback(err)
-      }
-    }
+  //       return res.status(200).json(messages.SUCCESS('', affectedRows))
+  //     } catch (err) {
+  //       errHandlerCallback(err)
+  //     }
+  //   }
 
-    return runQuery(errHandler(res))
-  })
-
-  // @desc : 자신의 유저 정보 가져오기
-  // @url : http://localhost:3001/api/users/me
-  // @method : GET
-  api.get('/me', checkLoggedIn, async (req, res) => {
-    const user = req.user
-
-    try {
-      return res.status(200).json(messages.SUCCESS(user))
-    } catch (err) {
-      return res.status(500).json(messages.ERROR(err))
-    }
-  })
+  //   return runQuery(errHandler(res))
+  // })
 
   return api
 }
