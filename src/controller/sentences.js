@@ -1,4 +1,4 @@
-module.exports = (conn) => {
+module.exports = (pool) => {
   const api = require('express').Router()
   const { checkLoggedIn } = require('../middleware/authenticate')
   const messages = require('../messages')
@@ -12,7 +12,7 @@ module.exports = (conn) => {
       try {
         const sql = `SELECT id, text, userId, updatedAt, like FROM sentences WHERE roomId = ? ORDER BY updatedAt ASC LIMIT ${skip}, ${limit}`
         const filters = [roomId]
-        const [result] = await conn.query(sql, filters)
+        const [result] = await pool.query(sql, filters)
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
@@ -32,7 +32,7 @@ module.exports = (conn) => {
       try {
         const sql = 'INSERT INTO sentences SET ?'
         const fields = { text, userId, roomId }
-        await conn.query(sql, fields)
+        await pool.query(sql, fields)
 
         return res.status(201).json(messages.SUCCESS())
       } catch (err) {
@@ -52,12 +52,12 @@ module.exports = (conn) => {
   //     try {
   //       const sql = `SELECT CAST( CASE creatorId WHEN ? THEN 1 ELSE 0 END AS BINARY ) AS isCreator FROM rooms WHERE id = ?`
   //       const filter = [ userId, roomId ]
-  //       const result = await conn.query(sql, filter)
+  //       const result = await pool.query(sql, filter)
   //       console.log(result)
 
   //       const sql2 = 'DELETE FROM sentences WHERE id = ?'
   //       const filters2 = [ sentenceId ]
-  //       const [{ affectedRows }] = await conn.query(sql2, filters2)
+  //       const [{ affectedRows }] = await pool.query(sql2, filters2)
 
   //       return res.json(messages.SUCCESS('', affectedRows))
   //     } catch (err) {
@@ -76,7 +76,7 @@ module.exports = (conn) => {
   //     try {
   //       const sql = 'UPDATE sentences SET text = ? WHERE id = ?'
   //       const filters = [ text, sentenceId ]
-  //       const [{ affectedRows }] = await conn.query(sql, filters)
+  //       const [{ affectedRows }] = await pool.query(sql, filters)
 
   //       return res.json(messages.SUCCESS('', affectedRows))
   //     } catch (err) {

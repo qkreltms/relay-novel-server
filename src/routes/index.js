@@ -5,11 +5,11 @@ module.exports = (router) => {
   const sentences = require('../controller/sentences')
   const initializeDB = require('../config/db')
 
-  initializeDB((conn) => {
-    router.use('/users', users(conn))
-    router.use('/auth', auth())
-    router.use('/rooms', rooms(conn))
-    router.use('/sentences', sentences(conn))
+  initializeDB((pool) => {
+    router.use('/users', users(pool))
+    router.use('/auth', auth(pool))
+    router.use('/rooms', rooms(pool))
+    router.use('/sentences', sentences(pool))
   })
 
   return router

@@ -11,7 +11,7 @@ module.exports = (app) => {
   app.use(passport.initialize())
   app.use(passport.session())
 
-  initializeDB((conn) => {
+  initializeDB((pool) => {
     // 세션 식별 id 쿠기 생성
     passport.serializeUser((userId, done) => {
       try {
@@ -22,10 +22,10 @@ module.exports = (app) => {
     })
 
     passport.deserializeUser(async (id, done) => {
-      const sql = 'SELECT ??, ??, ??, ??, ??, ??, ??, ??, ?? FROM users WHERE id = ?'
-      const fields = ['id', 'nickname', 'email', 'thumbnail', 'isAdmin', 'isBlocked', 'type', 'updatedAt', 'createdAt', id]
+      const sql = 'SELECT ??, ??, ??, ??, ??, ??, ??, ??, ??, ?? FROM users WHERE id = ?'
+      const fields = ['id', 'nickname', 'email', 'thumbnail', 'isAdmin', 'isBlocked', 'type', 'updatedAt', 'createdAt', 'isDeleted', id]
       try {
-        const [[user]] = await conn.query(sql, fields)
+        const [[user]] = await pool.query(sql, fields)
         // 유저가 없을 경우 종료
         if (!user) return done(null, false)
 
@@ -40,11 +40,11 @@ module.exports = (app) => {
       passwordField: 'password',
       passReqToCallback: true
     }, async (req, userEmail, password, done) => {
-      const sql = 'SELECT id, salt, password FROM users WHERE email = ? AND type = ?'
-      const filter = [userEmail, 'local']
-
       try {
-        let [[user]] = await conn.query(sql, filter)
+        const sql = 'SELECT id, salt, password FROM users WHERE email = ? AND type = ?'
+        const fields = [userEmail, 'local']
+
+        const [[user]] = await pool.query(sql, fields)
 
         // 이메일 매칭되서 유저 값 받았는지 확인
         if (!user) return done(null, false, req.flash('error', messages.INCORRECT_USERNAME))
@@ -66,6 +66,7 @@ module.exports = (app) => {
       }
     }))
 
+    // INFO: 페이스북 로그인은 중복값 허용이 안되니, 트랜잭션 처리 안함
     passport.use(new FacebookStrategy({
       clientID: config.FACEBOOK_CLIENT_ID,
       clientSecret: config.FACEBOOK_CLIENT_SECRET,
@@ -77,12 +78,13 @@ module.exports = (app) => {
       const email = profile.emails[0].value
       const thumbnail = profile.photos[0].value
       try {
-        let [[existsUser]] = await conn.query(`SELECT id FROM users WHERE email = ? AND type = ?`, [email, type])
+        const [[existsUser]] = await pool.query(`SELECT id FROM users WHERE email = ? AND type = ?`, [email, type])
+
         // 유저가 이미 존재하면 빠져나감
         if (existsUser) return done(null, existsUser.id)
 
         const fields = { nickname, email, thumbnail, type }
-        const [result] = await conn.query(`INSERT INTO users SET ?`, fields)
+        const [result] = await pool.query(`INSERT INTO users SET ?`, fields)
 
         return done(null, result.insertId)
       } catch (err) {

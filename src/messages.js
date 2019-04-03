@@ -14,6 +14,7 @@ module.exports.USER_IS_ALREADY_EXISTS = { status: 'info', message: 'User is alre
 
 module.exports.INCORRECT_USERNAME = 'Incorrect username.'
 module.exports.INCORRECT_PASSWORD = 'Incorrect password.'
+module.exports.DELETED_USER = 'Deleted user.'
 
 module.exports.NOT_ADMIN = { status: 'warn', message: 'Not admin.' }
 
@@ -21,6 +22,6 @@ module.exports.NOTHING_TO_DELETE = 'Nothing to delete. Item is not exists.'
 
 module.exports.ERROR = (err) => ({ status: 'error', message: err })
 
-module.exports.SUCCESS = (message = '', affectedRows = 0) => ({ status: 'success', message, affectedRows })
+module.exports.SUCCESS = (message = '') => ({ status: 'success', message })
 
 module.exports.EMAIL_OR_NICKNAME_IS_ALREADY_EXISTS = 'email or nickname is already exists.'

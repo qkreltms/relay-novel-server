@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
   `type` ENUM('LOCAL', 'FACEBOOK') NOT NULL,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `idx_users_email` (`email` ASC) VISIBLE)
 ENGINE = InnoDB;
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
   `dislike` INT NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_rooms_creatorId` (`creatorId` ASC) VISIBLE,
   CONSTRAINT `fk_rooms_creatorId`
@@ -67,6 +69,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsers` (
   `writeable` TINYINT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   INDEX `idx_roomJoinedUsers_roomId` (`roomId` ASC) VISIBLE,
   INDEX `idx_roomJoinedUsers_userId` (`userId` ASC) INVISIBLE,
   PRIMARY KEY (`userId`, `roomId`),
@@ -95,6 +98,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
   `dislike` INT NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_sentences_roomId` (`roomId` ASC) VISIBLE,
   INDEX `idx_sentences_userId` (`userId` ASC) VISIBLE,
@@ -124,6 +128,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `dislike` INT NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_comments_userId` (`userId` ASC) INVISIBLE,
   INDEX `idx_comments_roomId` (`roomId` ASC) VISIBLE,
@@ -150,6 +155,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Notices` (
   `creatorId` INT NOT NULL,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_notices_creatorId` (`creatorId` ASC) VISIBLE,
   CONSTRAINT `fk_notices_creatorId`
@@ -169,6 +175,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`SentenceLikesDislikes` (
   `isLike` TINYINT NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   INDEX `fk_sentenceLikesDislikes_userId_idx` (`userId` ASC) INVISIBLE,
   PRIMARY KEY (`sentenceId`, `userId`),
   CONSTRAINT `fk_sentenceLikesDislikes_sentenceId`
@@ -193,6 +200,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentLikesDislikes` (
   `isLike` TINYINT NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   INDEX `fk_commentLikesDislikes_userId_idx` (`userId` ASC) VISIBLE,
   PRIMARY KEY (`commentId`, `userId`),
   CONSTRAINT `fk_commentLikesDislikes_commentId`
@@ -217,6 +225,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomLikesDislikes` (
   `isLike` TINYINT NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
   INDEX `fk_roomLikesDislikes_userId_idx` (`userId` ASC) INVISIBLE,
   PRIMARY KEY (`roomId`, `userId`),
   CONSTRAINT `fk_roomLikesDislikes_roomId`

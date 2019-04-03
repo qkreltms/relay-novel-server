@@ -1,9 +1,9 @@
-module.exports = (conn) => {
+module.exports = (pool) => {
   const errHandler = require('../queryErrorHandler')
   const api = require('express').Router()
-  const hasher = require('pbkdf2-password')()
   const messages = require('../messages')
   const { checkLoggedIn } = require('../middleware/authenticate')
+  const config = require('../config')
 
   // @desc : 자신의 유저 정보 가져오기
   // @url : http://localhost:3001/api/users/me
@@ -18,45 +18,16 @@ module.exports = (conn) => {
     }
   })
 
-  // @desc: 유저 생성
-  // @url: http://localhost:3001/api/users/
-  // @method: POST
-  api.post('/', (req, res) => {
-    const email = req.body.email
-    const nickname = req.body.nickname
-    const password = req.body.password
-    const thumbnail = req.file
-
-    const runQuery = (errHandlerCallback) => {
-      const hasherCallback = async (err, pass, salt, hash) => {
-        if (err) return errHandlerCallback(err)
-
-        try {
-          let [[existsUser]] = await conn.query(`SELECT id FROM users WHERE email = ?`, [email])
-          // 유저가 이미 존재하면
-          if (existsUser) return res.status(409).json(messages.USER_IS_ALREADY_EXISTS)
-
-          const fields = { nickname, email, 'password': hash, salt, thumbnail }
-          await conn.query('INSERT INTO users SET ?', fields)
-
-          return res.json(messages.SUCCESS())
-        } catch (err) {
-          return errHandlerCallback(err)
-        }
-      }
-
-      return hasher({ password }, hasherCallback)
-    }
-
-    return runQuery(errHandler(res))
-  })
-
-  api.get('/email', (req, res) => {
+  // @desc: 유저 찾기
+  // @url: http://localhost:3001/api/users
+  // @method: GET
+  // @query: email: string
+  api.get('/', (req, res) => {
     const email = req.query.email
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const [result] = await conn.query('SELECT email FROM users WHERE email = ?', [email])
+        const [result] = await pool.query('SELECT email FROM users WHERE email = ?', [email])
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
@@ -67,30 +38,55 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
-  // TODO: delete to update and set empty.
-  // api.delete('/', (req, res) => {
-  //   const email = req.body.email
+  // @desc: 유저 삭제
+  // @url: http://localhost:3001/api/users
+  // @method: DELETE
+  api.delete('/', checkLoggedIn, (req, res) => {
+    const userId = req.user.id
 
-  //   const runQuery = async (errHandlerCallback) => {
-  //     try {
-  //       // 클라이언트 세션 삭제
-  //       req.session.destroy(err => {
-  //         if (err) return errHandlerCallback(err)
-  //       })
-  //       // 클라이언트 세션 쿠기 삭제
-  //       res.clearCookie(config.SESSION_COOKIE_KEY)
-  //       req.logout()
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        // 클라이언트 세션 삭제
+        req.session.destroy(err => {
+          if (err) return errHandlerCallback(err)
+        })
+        // 클라이언트 세션 쿠기 삭제
+        res.clearCookie(config.SESSION_COOKIE_KEY)
+        req.logout()
 
-  //       const [{ affectedRows }] = await conn.query('DELETE FROM users WHERE email = ?', [email])
+        const sql = `UPDATE users SET isDeleted = ? WHERE id = ?`
+        const fields = [ true, userId ]
+        const [result] = await pool.query(sql, fields)
 
-  //       return res.status(200).json(messages.SUCCESS('', affectedRows))
-  //     } catch (err) {
-  //       errHandlerCallback(err)
-  //     }
-  //   }
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        errHandlerCallback(err)
+      }
+    }
 
-  //   return runQuery(errHandler(res))
-  // })
+    return runQuery(errHandler(res))
+  })
+
+  // @desc: 유저 삭제 취소
+  // @url: http://localhost:3001/api/users
+  // @method: PATCH
+  api.patch('/', checkLoggedIn, (req, res) => {
+    const userId = req.user.id
+
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `UPDATE users SET isDeleted = ? WHERE id = ?`
+        const fields = [ false, userId ]
+        const [result] = await pool.query(sql, fields)
+
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
 
   return api
 }

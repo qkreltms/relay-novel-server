@@ -1,4 +1,4 @@
-module.exports = (conn) => {
+module.exports = (pool) => {
   const messages = require('../messages')
   const { checkLoggedIn } = require('../middleware/authenticate')
   const api = require('express').Router()
@@ -14,8 +14,8 @@ module.exports = (conn) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT id, writerLimit, tags, title, 'desc', 'like', 'dislike', creatorId, updatedAt, createdAt FROM rooms ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
-        const [result] = await conn.query(sql)
+        const sql = `SELECT id, writerLimit, tags, title, 'desc', 'like', 'dislike', creatorId, updatedAt, createdAt, isDeleted FROM rooms ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
+        const [result] = await pool.query(sql)
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
@@ -32,9 +32,9 @@ module.exports = (conn) => {
   api.get('/join', (req, res) => {
     const runQuery = async (errHandlerCallback) => {
       try {
-        // 이 상태로 join 쿼리 작성시 SQL인젝션 가능?
-        const sql = `SELECT nickname, thumbnail FROM roomjoinedusers JOIN users WHERE roomjoinedusers.userid = users.id`
-        const [result] = await conn.query(sql)
+        // TODO: 이 상태로 join 쿼리 작성시 SQL인젝션 가능?
+        const sql = `SELECT nickname, thumbnail, isDeleted FROM roomjoinedusers JOIN users WHERE roomjoinedusers.userid = users.id`
+        const [result] = await pool.query(sql)
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
@@ -56,8 +56,11 @@ module.exports = (conn) => {
     const desc = req.body.desc
     const creatorId = req.user.id
     const runQuery = async (errHandlerCallback) => {
+      const conn = await pool.getConnection()
+
       try {
-        // 트랜잭션으로 바꾸는게 나을까?
+        await conn.query('START TRANSACTION')
+
         const sql = 'INSERT INTO rooms SET ?'
         const fields = { writerLimit, tags, title, desc, creatorId }
         const [result] = await conn.query(sql, fields)
@@ -67,8 +70,14 @@ module.exports = (conn) => {
         const fields2 = { userId: creatorId, roomId: createdRoomId }
         await conn.query(sql2, fields2)
 
+        await conn.query('COMMIT')
+        await conn.release()
+
         return res.json(messages.SUCCESS(result))
       } catch (err) {
+        await conn.query('ROLLBACK')
+        await conn.release()
+
         return errHandlerCallback(err)
       }
     }
@@ -87,7 +96,7 @@ module.exports = (conn) => {
       try {
         const sql = 'INSERT INTO roomjoinedusers SET ?'
         const fields = { userId, roomId }
-        const result = await conn.query(sql, fields)
+        const result = await pool.query(sql, fields)
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
@@ -98,58 +107,8 @@ module.exports = (conn) => {
     return runQuery(errHandler(res))
   })
 
-  // TODO: delete to update
-  // // @desc : 방 나가기
-  // // @url : http://localhost:3001/api/rooms/join
-  // // @method : DELETE
-  // // @body: roomId: string
-  // api.delete('/join', checkLoggedIn, (req, res) => {
-  //   const roomId = req.body.roomId
-  //   const userId = req.user.id
-  //   const runQuery = async (errHandlerCallback) => {
-  //     try {
-  //       const sql = 'DELETE FROM roomjoinedusers WHERE roomid = ? AND userid = ?'
-  //       const fields = { userId, roomId }
-  //       const result = await conn.query(sql, fields)
-
-  //       return res.json(messages.SUCCESS(result))
-  //     } catch (err) {
-  //       return errHandlerCallback(err)
-  //     }
-  //   }
-
-  //   return runQuery(errHandler(res))
-  // })
-
-  // TODO: delete to update
-  // // @desc : 방 삭제
-  // // @url : http://localhost:3001/api/rooms
-  // // @method : DELETE
-  // // @body: roomId: string
-  // api.delete('/', checkLoggedIn, (req, res) => {
-  //   const roomId = req.body.roomId
-  //   const userId = req.user.id
-  //   const runQuery = async (errHandlerCallback) => {
-  //     try {
-  //       // TODO: 트랜잭션 사용
-  //       // 방 삭제
-  //       const sql = 'DELETE FROM rooms WHERE roomid = ? AND userid = ?'
-  //       const fields = { userId, roomId }
-  //       const result = await conn.query(sql, fields)
-
-  //       // 방에 참가했던 모든 유저 삭제
-  //       const sql2 = `DELETE FROM roomjoinedusers WHERE roomid = ?`
-  //       const fields2 = { roomId }
-  //       await conn.query(sql2, fields2)
-
-  //       return res.json(messages.SUCCESS(result))
-  //     } catch (err) {
-  //       return errHandlerCallback(err)
-  //     }
-  //   }
-
-  //   return runQuery(errHandler(res))
-  // })
+  // TODO: 방 참가 나가기
+  // TODO: 방 삭제
 
   // @desc : 방 수정
   // @url : http://localhost:3001/api/rooms
@@ -162,11 +121,13 @@ module.exports = (conn) => {
     const title = req.body.title
     const desc = req.body.desc
     const userId = req.user.id
+    const isDeleted = req.body.isDeleted
+    // TODO: isdeleted string to boolean 형 확인
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `UPDATE rooms SET writerLimit = ?, tags = ?, title = ?, desc = ? WHERE roomid = ? AND userid = ?`
-        const fields = { writerLimit, tags, title, desc, roomId, userId }
-        const [result] = await conn.query(sql, fields)
+        const sql = `UPDATE rooms SET writerLimit = ?, tags = ?, title = ?, desc = ?, isDeleted = ? WHERE roomid = ? AND userid = ?`
+        const fields = { writerLimit, tags, title, desc, roomId, userId, isDeleted }
+        const [result] = await pool.query(sql, fields)
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
