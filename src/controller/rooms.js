@@ -11,13 +11,21 @@ module.exports = (pool) => {
   api.get('/', (req, res) => {
     const skip = req.query.skip || 0
     const limit = req.query.limit || 30
+    const roomId = req.query.roomId
+    console.log(roomId)
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT id, writerLimit, tags, title, 'desc', 'like', 'dislike', creatorId, updatedAt, createdAt, isDeleted FROM rooms ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
-        const [result] = await pool.query(sql)
-
-        return res.json(messages.SUCCESS(result))
+        if (roomId) {
+          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, \`dislike\`, creatorId, updatedAt, createdAt, isDeleted FROM rooms WHERE id = ?`
+          const field = [roomId]
+          const [result] = await pool.query(sql, field)
+          return res.json(messages.SUCCESS(result))
+        } else {
+          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, \`dislike\`, creatorId, updatedAt, createdAt, isDeleted FROM rooms ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
+          const [result] = await pool.query(sql)
+          return res.json(messages.SUCCESS(result))
+        }
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -125,7 +133,7 @@ module.exports = (pool) => {
     // TODO: isdeleted string to boolean 형 확인
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `UPDATE rooms SET writerLimit = ?, tags = ?, title = ?, desc = ?, isDeleted = ? WHERE roomid = ? AND userid = ?`
+        const sql = `UPDATE rooms SET writerLimit = ?, tags = ?, title = ?, \`desc\` = ?, isDeleted = ? WHERE roomid = ? AND userid = ?`
         const fields = { writerLimit, tags, title, desc, roomId, userId, isDeleted }
         const [result] = await pool.query(sql, fields)
 

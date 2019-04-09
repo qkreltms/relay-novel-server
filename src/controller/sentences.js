@@ -10,7 +10,7 @@ module.exports = (pool) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = `SELECT id, text, userId, updatedAt, like FROM sentences WHERE roomId = ? ORDER BY updatedAt ASC LIMIT ${skip}, ${limit}`
+        const sql = `SELECT id, text, userId, updatedAt, \`like\` FROM sentences WHERE roomId = ? ORDER BY updatedAt ASC LIMIT ${skip}, ${limit}`
         const filters = [roomId]
         const [result] = await pool.query(sql, filters)
 
