@@ -45,7 +45,9 @@ select
 */
 select * from users;
 select * from rooms;
+select * from roomJoinedusers;
 select * from roomlikedislike;
+SELECT nickname, thumbnail FROM users join (SELECT userId FROM roomJoinedUsers where roomId = 1) as A where users.id = A.userId;
 /*
 DELETE
 */
