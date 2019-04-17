@@ -2,3 +2,14 @@ node_modules/
 
 .DS_Store
 .env
+
+# misc
+.DS_Store
+.env
+.env.development
+.env.test
+.env.production
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

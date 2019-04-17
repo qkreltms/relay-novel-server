@@ -87,30 +87,15 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`Sentences`
+-- Table `relay_novel`.`SentencesInfo`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `text` TEXT NULL,
+CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesInfo` (
   `roomId` INT NOT NULL,
-  `userId` INT NOT NULL,
-  `like` INT NOT NULL DEFAULT 0,
-  `dislike` INT NOT NULL DEFAULT 0,
-  `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  INDEX `idx_sentences_roomId` (`roomId` ASC) VISIBLE,
-  INDEX `idx_sentences_userId` (`userId` ASC) VISIBLE,
-  INDEX `idx_sentences_sentenceId` (`id` ASC) VISIBLE,
-  CONSTRAINT `fk_sentences_roomId`
+  `total` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`roomId`),
+  CONSTRAINT `fk_sentencesInfo_roomId`
     FOREIGN KEY (`roomId`)
-    REFERENCES `relay_novel`.`RoomJoinedUsers` (`roomId`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_sentences_userId`
-    FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`RoomJoinedUsers` (`userId`)
+    REFERENCES `relay_novel`.`Rooms` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -126,6 +111,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `userId` INT NOT NULL,
   `like` INT NOT NULL DEFAULT 0,
   `dislike` INT NOT NULL DEFAULT 0,
+  `total` INT NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `isDeleted` TINYINT NOT NULL DEFAULT 0,
@@ -167,25 +153,61 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`SentenceLikesDislikes`
+-- Table `relay_novel`.`Sentences`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`SentenceLikesDislikes` (
+CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` INT NOT NULL,
+  `roomId` INT NOT NULL,
+  `text` TEXT NULL,
+  `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `like` INT NOT NULL DEFAULT 0,
+  `dislike` INT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  INDEX `fk_sentences_userId_idx` (`userId` ASC) VISIBLE,
+  INDEX `fk_sentences_roomId_idx` (`roomId` ASC) VISIBLE,
+  CONSTRAINT `fk_sentences_userId`
+    FOREIGN KEY (`userId`)
+    REFERENCES `relay_novel`.`RoomJoinedUsers` (`userId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_sentences_roomId`
+    FOREIGN KEY (`roomId`)
+    REFERENCES `relay_novel`.`RoomJoinedUsers` (`roomId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `relay_novel`.`SentencesLikes`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesLikes` (
   `sentenceId` INT NOT NULL,
   `userId` INT NOT NULL,
+  `roomId` INT NOT NULL,
   `isLike` TINYINT NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT NOT NULL DEFAULT 0,
-  INDEX `fk_sentenceLikesDislikes_userId_idx` (`userId` ASC) INVISIBLE,
-  PRIMARY KEY (`sentenceId`, `userId`),
-  CONSTRAINT `fk_sentenceLikesDislikes_sentenceId`
+  PRIMARY KEY (`sentenceId`),
+  INDEX `fk_sentencesLikes_userId` (`userId` ASC) VISIBLE,
+  INDEX `fk_sentencesLikes_roomId` (`roomId` ASC) VISIBLE,
+  CONSTRAINT `fk_sentencesLikes_userId`
+    FOREIGN KEY (`userId`)
+    REFERENCES `relay_novel`.`Sentences` (`userId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_sentencesLikes_sentenceId`
     FOREIGN KEY (`sentenceId`)
     REFERENCES `relay_novel`.`Sentences` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_sentenceLikesDislikes_userId`
-    FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`Sentences` (`userId`)
+  CONSTRAINT `fk_sentencesLikes_roomId`
+    FOREIGN KEY (`roomId`)
+    REFERENCES `relay_novel`.`Sentences` (`roomId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -240,11 +262,39 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomLikesDislikes` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+
+-- -----------------------------------------------------
+-- Table `relay_novel`.`RoomsInfo`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomsInfo` (
+  `id` INT NOT NULL DEFAULT 0,
+  `total` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
 USE `relay_novel`;
 
 DELIMITER $$
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentenceLikesDislikes_AFTER_INSERT` AFTER INSERT ON `SentenceLikesDislikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`Rooms_AFTER_INSERT` AFTER INSERT ON `Rooms` FOR EACH ROW
+BEGIN
+	UPDATE roomsInfo SET `total` = `total` + 1 WHERE id = 0;
+END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`Comments_AFTER_INSERT` AFTER INSERT ON `Comments` FOR EACH ROW
+BEGIN
+	UPDATE comments SET `total` = `total` + 1 WHERE id = NEW.id;
+END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`Sentences_AFTER_INSERT` AFTER INSERT ON `Sentences` FOR EACH ROW
+BEGIN
+	UPDATE sentencesInfo SET `total` = `total` + 1 WHERE roomId = NEW.roomId;
+END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_AFTER_INSERT` AFTER INSERT ON `SentencesLikes` FOR EACH ROW
 BEGIN
 	IF (NEW.isLike = true) THEN
 		UPDATE sentences SET `like` = `like` + 1 WHERE id = NEW.sentenceId;
@@ -254,7 +304,17 @@ BEGIN
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentenceLikesDislikes_AFTER_DELETE` AFTER DELETE ON `SentenceLikesDislikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_AFTER_UPDATE` AFTER UPDATE ON `SentencesLikes` FOR EACH ROW
+BEGIN
+	IF (NEW.isLike = true) THEN
+		UPDATE sentences SET `like` = `like` + 1 WHERE id = NEW.sentenceId;
+	ELSE 
+		UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = NEW.sentenceId;
+	END IF;
+END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_AFTER_DELETE` AFTER DELETE ON `SentencesLikes` FOR EACH ROW
 BEGIN
 	IF (OLD.isLike = true) THEN
 		UPDATE sentences SET `like` = `like` + 1 WHERE id = OLD.sentenceId;
@@ -265,6 +325,16 @@ END$$
 
 USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikesDislikes_AFTER_INSERT` AFTER INSERT ON `CommentLikesDislikes` FOR EACH ROW
+BEGIN
+	IF (NEW.isLike = true) THEN
+		UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
+	ELSE 
+		UPDATE comments SET `dislike` = `dislike` + 1 WHERE id = NEW.commentId;
+	END IF;
+END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikesDislikes_AFTER_UPDATE` AFTER UPDATE ON `CommentLikesDislikes` FOR EACH ROW
 BEGIN
 	IF (NEW.isLike = true) THEN
 		UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
@@ -294,6 +364,16 @@ BEGIN
 END$$
 
 USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikesDislikes_AFTER_UPDATE` AFTER UPDATE ON `RoomLikesDislikes` FOR EACH ROW
+BEGIN
+	IF (NEW.isLike = true) THEN
+		UPDATE rooms SET `like` = `like` - 1 WHERE id = NEW.roomId;
+	ELSE 
+		UPDATE rooms SET `dislike` = `dislike` - 1 WHERE id = NEW.roomId;
+	END IF;
+END$$
+
+USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikesDislikes_AFTER_DELETE` AFTER DELETE ON `RoomLikesDislikes` FOR EACH ROW
 BEGIN
 	IF (OLD.isLike = true) THEN
@@ -303,6 +383,7 @@ BEGIN
 	END IF;
 END$$
 
+INSERT INTO roomsinfo(total) VALUES (0);
 
 DELIMITER ;
 

@@ -19,16 +19,38 @@ module.exports = (pool) => {
     const runQuery = async (errHandlerCallback) => {
       try {
         if (sentenceId) {
-          const sql = `SELECT id, text, userId, updatedAt, \`like\`, dislike FROM sentences WHERE roomId = ? AND id = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
+          const sql = `SELECT text, updatedAt, createdAt FROM sentences WHERE roomId = ? AND id = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
           const filters = [roomId, sentenceId, false]
           const [result] = await pool.query(sql, filters)
           return res.json(messages.SUCCESS(result))
         } else {
-          const sql = `SELECT id, text, userId, updatedAt, \`like\`, dislike FROM sentences WHERE roomId = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
+          const sql = `SELECT id, text, userId, updatedAt FROM sentences WHERE roomId = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
           const filters = [roomId, false]
           const [result] = await pool.query(sql, filters)
           return res.json(messages.SUCCESS(result))
         }
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errorHandler(res))
+  })
+
+  // @desc : room에 속한 소설글의 총합 출력
+  // @url : http://localhost:3001/api/sentences/total
+  // @method : GET
+  // @query : roomId: string
+  api.get('/total', (req, res) => {
+    const roomId = req.query.roomId
+
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `SELECT total FROM sentencesInfo WHERE roomId = ?`
+        const fields = [roomId]
+        const [result] = await pool.query(sql, fields)
+
+        return res.json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }

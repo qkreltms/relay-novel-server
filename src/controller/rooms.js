@@ -39,6 +39,7 @@ module.exports = (pool) => {
   // @desc : 방에 참가한 모든 사람 출력
   // @url : http://localhost:3001/api/rooms/join
   // @method : GET
+  // @query : roomId: string
   api.get('/join', (req, res) => {
     const roomId = req.query.roomId
 
@@ -57,7 +58,49 @@ module.exports = (pool) => {
     return runQuery(errHandler(res))
   })
 
-  // @desc : 방 생성 및 방 참가
+  // @desc : 방에 참가했는지 확인
+  // @url : http://localhost:3001/api/rooms/writeable
+  // @method : GET
+  // @query : roomId: string, userId: string
+  api.get('/writeable', (req, res) => {
+    const roomId = req.query.roomId
+    const userId = req.query.userId
+    console.log(roomId, userId)
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `SELECT writeable FROM roomJoinedUsers WHERE roomId = ? AND userId = ?`
+        const fields = [roomId, userId]
+        const [result] = await pool.query(sql, fields)
+
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
+
+  // @desc : 모든 room의 개수 출력
+  // @url : http://localhost:3001/api/rooms/total
+  // @method : GET
+  api.get('/total', (req, res) => {
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `SELECT total FROM roomsInfo WHERE id = ?`
+        const fields = [0]
+        const [result] = await pool.query(sql, fields)
+
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
+
+  // @desc : 방 생성
   // @url : http://localhost:3001/api/rooms
   // @method : POST
   // @body : writerLimit?: String, tags?: String, title: String, desc: String
@@ -84,12 +127,19 @@ module.exports = (pool) => {
         const [result] = await conn.query(sql, fields)
         const createdRoomId = result.insertId
 
-        const sql2 = 'INSERT INTO roomJoinedUsers SET ?'
-        const fields2 = {
-          userId: creatorId,
+        const sql2 = 'INSERT INTO roomJoinedUsers(userId, roomId, writeable) VALUES (?, ?, ?) '
+        const fields2 = [
+          creatorId,
+          createdRoomId,
+          true
+        ]
+        await conn.query(sql2, fields2)
+
+        const sql3 = `INSERT INTO sentencesInfo SET ?`
+        const fields3 = {
           roomId: createdRoomId
         }
-        await conn.query(sql2, fields2)
+        await conn.query(sql3, fields3)
 
         await conn.query('COMMIT')
         await conn.release()
@@ -109,13 +159,14 @@ module.exports = (pool) => {
   // @desc : 방 글쓰기 참가
   // @url : http://localhost:3001/api/rooms/join
   // @method : POST
-  // @body: roomId: string
+  // @body: roomId: string, userId: string
   api.post('/join', checkLoggedIn, (req, res) => {
     const roomId = req.body.roomId
-    const userId = req.user.id
+    const userId = req.body.userId
+
     const runQuery = async (errHandlerCallback) => {
       try {
-        const sql = 'INSERT INTO roomJoinedUsers SET ?'
+        const sql = 'INSERT INTO roomJoinedUsers(userId, roomId, writeable) VALUES (?, ?, ?)'
         const fields = [userId, roomId, true]
         const result = await pool.query(sql, fields)
 

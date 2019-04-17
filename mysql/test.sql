@@ -34,20 +34,26 @@ insert into rooms(tags, title, `desc`, creatorId) values('#tag1#tag2', 'title1',
 insert into rooms(tags, title, `desc`, creatorId) values('#tag1#tag2', 'title2', 'desc2', 2);
 select json_set('{"a": 1, "b": 2}');
 SELECT JSON_SET('{"a": 1, "b": 2}', '$.c', 3) AS 'Result';
-insert into roomJoinedUsers(userId, roomId) values('user1', 1);
-insert into sentences(text, roomId, userId) values('text1', 1, 'user1');
+insert into roomJoinedUsers(userId, roomId) values(1, 1);
+insert into sentences(text, roomId, userId) values('text1', 1, 1);
 insert into comments(text, roomid, userid) values('text1', 1, 'user1');
 insert into roomlikedislike(roomId, userId, isLike) values(3, 1, false);
 insert into roomlikedislike(roomId, userId, isLike) values(3, 2, false);
 insert into roomlikedislike(roomId, userId, isLike) values(1, 2, false);
-/*
+insert into sentencesInfo(roomId, userId) values(1, 1);
+/*Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`relay_novel`.`sentences`, CONSTRAINT `fk_sentences_userId` FOREIGN KEY (`userId`) REFERENCES `sentencesinfo` (`userId`))
+
 select 
 */
+select * from sentencesInfo;
 select * from users;
 select * from rooms;
 select * from roomJoinedusers;
 select * from roomlikedislike;
-SELECT nickname, thumbnail FROM users join (SELECT userId FROM roomJoinedUsers where roomId = 1) as A where users.id = A.userId;
+select * from sentences;
+SELECT nickname, thumbnail FROM users join (SELECT userId FROM roomJoinedUsers where roomId = 12) as A where users.id = A.userId AND isDeleted = false;
+SELECT id FROM users JOIN (SELECT userId FROM roomJoinedUsers WHERE roomId = 2) AS a WHERE users.id = a.userId AND isDeleted = false;
+SELECT id, nickname, thumbnail, writeable FROM users JOIN (SELECT userId FROM roomJoinedUsers WHERE roomId = 1) AS a WHERE users.id = a.userId AND isDeleted = false;
 /*
 DELETE
 */
