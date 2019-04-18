@@ -28,6 +28,7 @@ drop table if exists comments, notices, room, room_user, roomjoinedusers, rooms,
 /*
 insert test
 */
+insert into roomsinfo(total) values (0);
 insert into users( nickname, email, `password`, salt, thumbnail, `type`) values('nickname1', 'email1@abcd.com', 'password1', 'salt1', 'thumbnail1', 'local');
 insert into notices(title, `desc`, creatorId) values('title1', 'desc1', 'user1');
 insert into rooms(tags, title, `desc`, creatorId) values('#tag1#tag2', 'title1', 'desc1', 1);
@@ -45,10 +46,12 @@ insert into sentencesInfo(roomId, userId) values(1, 1);
 
 select 
 */
+select * from roomsinfo;
 select * from sentencesInfo;
 select * from users;
 select * from rooms;
 select * from roomJoinedusers;
+select writeable from roomJoinedusers where userId = 1 AND roomId = 2;
 select * from roomlikedislike;
 select * from sentences;
 SELECT nickname, thumbnail FROM users join (SELECT userId FROM roomJoinedUsers where roomId = 12) as A where users.id = A.userId AND isDeleted = false;
@@ -93,3 +96,15 @@ BEGIN
 END $$
 DELIMITER ;
 
+DELIMITER $$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_BEFORE_INSERT` BEFORE INSERT ON `RoomJoinedUsers` FOR EACH ROW
+    BEGIN
+        SET total = (SELECT total FROM roomjoinedusersInfo WHERE roomId = NEW.roomId);
+        SET limitOfSpace = (SELECT `limit` FROM rooms WHERE id = NEW.roomId);
+
+        IF (@total > @limit) THEN
+			SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = 'Room is full of space';
+		END IF;
+
+    END
+DELIMITER ;

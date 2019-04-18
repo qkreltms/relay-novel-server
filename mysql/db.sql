@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Users` (
   `password` VARCHAR(255) NULL,
   `salt` VARCHAR(255) NULL,
   `thumbnail` VARCHAR(255) NULL,
-  `isAdmin` TINYINT(1) NOT NULL DEFAULT 0,
-  `isBlocked` TINYINT(1) NOT NULL DEFAULT 0,
+  `isAdmin` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+  `isBlocked` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
   `type` ENUM('LOCAL', 'FACEBOOK') NOT NULL,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `idx_users_email` (`email` ASC) VISIBLE)
 ENGINE = InnoDB;
@@ -45,11 +45,11 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
   `title` VARCHAR(255) NULL,
   `desc` LONGTEXT NULL,
   `creatorId` INT NOT NULL,
-  `like` INT NOT NULL DEFAULT 0,
-  `dislike` INT NOT NULL DEFAULT 0,
+  `like` INT UNSIGNED NOT NULL DEFAULT 0,
+  `dislike` INT UNSIGNED NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_rooms_creatorId` (`creatorId` ASC) VISIBLE,
   CONSTRAINT `fk_rooms_creatorId`
@@ -69,13 +69,13 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsers` (
   `writeable` TINYINT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   INDEX `idx_roomJoinedUsers_roomId` (`roomId` ASC) VISIBLE,
   INDEX `idx_roomJoinedUsers_userId` (`userId` ASC) INVISIBLE,
   PRIMARY KEY (`userId`, `roomId`),
   CONSTRAINT `fk_roomJoinedUsers_userId`
     FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`Rooms` (`creatorId`)
+    REFERENCES `relay_novel`.`Users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_roomJoinedUsers_roomId`
@@ -91,7 +91,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesInfo` (
   `roomId` INT NOT NULL,
-  `total` INT NOT NULL DEFAULT 0,
+  `total` INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`roomId`),
   CONSTRAINT `fk_sentencesInfo_roomId`
     FOREIGN KEY (`roomId`)
@@ -109,12 +109,11 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `text` TEXT NULL,
   `roomId` INT NOT NULL,
   `userId` INT NOT NULL,
-  `like` INT NOT NULL DEFAULT 0,
-  `dislike` INT NOT NULL DEFAULT 0,
-  `total` INT NOT NULL DEFAULT 0,
+  `like` INT UNSIGNED NOT NULL DEFAULT 0,
+  `dislike` INT UNSIGNED NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_comments_userId` (`userId` ASC) INVISIBLE,
   INDEX `idx_comments_roomId` (`roomId` ASC) VISIBLE,
@@ -141,7 +140,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Notices` (
   `creatorId` INT NOT NULL,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_notices_creatorId` (`creatorId` ASC) VISIBLE,
   CONSTRAINT `fk_notices_creatorId`
@@ -162,9 +161,9 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Sentences` (
   `text` TEXT NULL,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `like` INT NOT NULL DEFAULT 0,
-  `dislike` INT NOT NULL DEFAULT 0,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `like` INT UNSIGNED NOT NULL DEFAULT 0,
+  `dislike` INT UNSIGNED NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `fk_sentences_userId_idx` (`userId` ASC) VISIBLE,
   INDEX `fk_sentences_roomId_idx` (`roomId` ASC) VISIBLE,
@@ -188,10 +187,10 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesLikes` (
   `sentenceId` INT NOT NULL,
   `userId` INT NOT NULL,
   `roomId` INT NOT NULL,
-  `isLike` TINYINT NOT NULL,
+  `isLike` TINYINT UNSIGNED NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`sentenceId`),
   INDEX `fk_sentencesLikes_userId` (`userId` ASC) VISIBLE,
   INDEX `fk_sentencesLikes_roomId` (`roomId` ASC) VISIBLE,
@@ -244,10 +243,10 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomLikesDislikes` (
   `roomId` INT NOT NULL,
   `userId` INT NOT NULL,
-  `isLike` TINYINT NOT NULL,
+  `isLike` TINYINT UNSIGNED NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  `isDeleted` TINYINT NOT NULL DEFAULT 0,
+  `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   INDEX `fk_roomLikesDislikes_userId_idx` (`userId` ASC) INVISIBLE,
   PRIMARY KEY (`roomId`, `userId`),
   CONSTRAINT `fk_roomLikesDislikes_roomId`
@@ -268,8 +267,23 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomsInfo` (
   `id` INT NOT NULL DEFAULT 0,
-  `total` INT NOT NULL DEFAULT 0,
+  `total` INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `relay_novel`.`RoomJoinedUsersInfo`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsersInfo` (
+  `roomId` INT NOT NULL,
+  `total` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`roomId`),
+  CONSTRAINT `fk_roomJoinedUsersInfo_roomId`
+    FOREIGN KEY (`roomId`)
+    REFERENCES `relay_novel`.`Rooms` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 USE `relay_novel`;
@@ -279,6 +293,27 @@ USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`Rooms_AFTER_INSERT` AFTER INSERT ON `Rooms` FOR EACH ROW
 BEGIN
 	UPDATE roomsInfo SET `total` = `total` + 1 WHERE id = 0;
+END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_BEFORE_INSERT` BEFORE INSERT ON `RoomJoinedUsers` FOR EACH ROW
+    BEGIN
+    DECLARE total INT;
+    DECLARE limitOfSpace INT;
+        SET total = (SELECT total FROM roomjoinedusersInfo WHERE roomId = NEW.roomId);
+        SET limitOfSpace = (SELECT writerLimit FROM rooms WHERE id = NEW.roomId);
+        
+        # 방이 꽉차면 유저는 들어올 수 없음
+        IF (@total > @limit) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Room is full of space';
+		END IF;
+
+    END$$
+
+USE `relay_novel`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_AFTER_INSERT` AFTER INSERT ON `RoomJoinedUsers` FOR EACH ROW
+BEGIN
+	UPDATE roomJoinedUsersInfo SET `total` = `total` + 1 WHERE roomId = NEW.roomId;
 END$$
 
 USE `relay_novel`$$
@@ -383,7 +418,6 @@ BEGIN
 	END IF;
 END$$
 
-INSERT INTO roomsinfo(total) VALUES (0);
 
 DELIMITER ;
 

@@ -115,7 +115,7 @@ module.exports = (pool) => {
 
       try {
         await conn.query('START TRANSACTION')
-
+        // TODO: procedure에서 하기
         const sql = 'INSERT INTO rooms SET ?'
         const fields = {
           writerLimit,
@@ -124,8 +124,14 @@ module.exports = (pool) => {
           desc,
           creatorId
         }
-        const [result] = await conn.query(sql, fields)
-        const createdRoomId = result.insertId
+        const [{ insertId }] = await conn.query(sql, fields)
+        const createdRoomId = insertId
+
+        const sql4 = `INSERT INTO roomJoinedUsersInfo SET ?`
+        const fields4 = {
+          roomId: createdRoomId
+        }
+        const [result] = await conn.query(sql4, fields4)
 
         const sql2 = 'INSERT INTO roomJoinedUsers(userId, roomId, writeable) VALUES (?, ?, ?) '
         const fields2 = [
@@ -144,6 +150,7 @@ module.exports = (pool) => {
         await conn.query('COMMIT')
         await conn.release()
 
+        result.insertId = insertId
         return res.json(messages.SUCCESS(result))
       } catch (err) {
         await conn.query('ROLLBACK')
