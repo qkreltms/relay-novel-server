@@ -117,12 +117,8 @@ module.exports = (pool) => {
         const fields = [roomId]
         const [[{ total }]] = await conn.query(sql, fields)
 
-        const sql2 = `SELECT writerLimit FROM rooms WHERE id = ?`
-        const fields2 = [roomId]
-        const [[{ writerLimit }]] = await conn.query(sql2, fields2)
-
         const result = {
-          slot: Math.abs(total - writerLimit) || 0
+          slot: total || 0
         }
 
         await conn.query('COMMIT')
