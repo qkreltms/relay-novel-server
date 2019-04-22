@@ -9,10 +9,14 @@ module.exports = (res) => {
       message: err.message || '',
       stack: err.stack || ''
     }
-    console.info('@@ERROR@@:', err)
+    // TODO: production 모드에서는 콘솔 비활성화하기
+    console.info('@@ERROR@@:\n', err)
 
     switch (err.code) {
       case 'ER_DUP_ENTRY': {
+        return res.status(409).json(messages.ERROR(err))
+      }
+      case 'ER_SIGNAL_EXCEPTION': {
         return res.status(409).json(messages.ERROR(err))
       }
       default: {

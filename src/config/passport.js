@@ -23,7 +23,7 @@ module.exports = (app) => {
 
     passport.deserializeUser(async (id, done) => {
       const sql = 'SELECT ??, ??, ??, ??, ??, ??, ??, ??, ??, ?? FROM users WHERE id = ?'
-      const fields = ['id', 'nickname', 'email', 'thumbnail', 'isAdmin', 'isBlocked', 'type', 'updatedAt', 'createdAt', 'isDeleted', id]
+      const fields = ['id', 'nickname', 'email', 'thumbnail', 'userType', 'isBlocked', 'type', 'updatedAt', 'createdAt', 'isDeleted', id]
       try {
         const [[user]] = await pool.query(sql, fields)
         // 유저가 없을 경우 종료

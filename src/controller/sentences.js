@@ -22,12 +22,12 @@ module.exports = (pool) => {
           const sql = `SELECT text, updatedAt, createdAt FROM sentences WHERE roomId = ? AND id = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
           const filters = [roomId, sentenceId, false]
           const [result] = await pool.query(sql, filters)
-          return res.json(messages.SUCCESS(result))
+          return res.status(200).json(messages.SUCCESS(result))
         } else {
           const sql = `SELECT id, text, userId, updatedAt FROM sentences WHERE roomId = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
           const filters = [roomId, false]
           const [result] = await pool.query(sql, filters)
-          return res.json(messages.SUCCESS(result))
+          return res.status(200).json(messages.SUCCESS(result))
         }
       } catch (err) {
         return errHandlerCallback(err)
@@ -50,7 +50,7 @@ module.exports = (pool) => {
         const fields = [roomId]
         const [result] = await pool.query(sql, fields)
 
-        return res.json(messages.SUCCESS(result))
+        return res.status(200).json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }

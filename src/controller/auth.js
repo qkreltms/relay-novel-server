@@ -106,7 +106,7 @@ module.exports = (pool) => {
           const fields = [ nickname, email, hash, salt, thumbnail ]
           await pool.query('INSERT INTO users SET nickname = ?, email = ?, password = ?, salt = ?, thumbnail = ?', fields)
 
-          return res.json(messages.SUCCESS())
+          return res.status(200).json(messages.SUCCESS())
         } catch (err) {
           return errHandlerCallback(err)
         }
