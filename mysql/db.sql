@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesLikes` (
   `sentenceId` INT NOT NULL,
   `userId` INT NOT NULL,
   `roomId` INT NOT NULL,
-  `isLike` TINYINT UNSIGNED NOT NULL,
+  `isLike` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -298,13 +298,13 @@ END$$
 USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_BEFORE_INSERT` BEFORE INSERT ON `RoomJoinedUsers` FOR EACH ROW
     BEGIN
-    DECLARE total INT UNSIGNED DEFAULT 0;
+    DECLARE totalOfPeople INT UNSIGNED DEFAULT 0;
     DECLARE limitOfSpace INT UNSIGNED DEFAULT 0;
-        SET total := (SELECT total FROM roomjoinedusersInfo WHERE roomId = NEW.roomId);
+        SET totalOfPeople := (SELECT total FROM roomjoinedusersinfo WHERE roomId = NEW.roomId);
         SET limitOfSpace := (SELECT writerLimit FROM rooms WHERE id = NEW.roomId);
         
         # 방이 꽉차면 유저는 들어올 수 없음
-        IF (total > limitOfSpace) THEN
+        IF (totalOfPeople >= limitOfSpace) THEN
 			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Room is full of space';
 		END IF;
 
