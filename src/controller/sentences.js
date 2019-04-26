@@ -20,17 +20,18 @@ module.exports = (pool) => {
           const sql = `SELECT id, text, updatedAt, createdAt, updatedAt, \`like\`, dislike FROM sentences WHERE id = ? AND isDeleted = ?`
           const filters = [sentenceId, false]
           const [result] = await pool.query(sql, filters)
-          return res.status(200).json(messages.SUCCESS(result))
+          return res.json(messages.SUCCESS(result))
         } else if (userId) {
+          // TODO: 아래 코드 분리
           const sql = `SELECT id, isLike, \`text\`, updatedAt, createdAt, \`like\`, dislike FROM (SELECT id, \`text\`, userId, updatedAt, createdAt, \`like\`, dislike FROM sentences WHERE roomId = ? AND isDeleted = ?) AS A LEFT JOIN (SELECT sentenceId, userId, isLike FROM sentencesLikes WHERE roomId = ? AND userId = ? AND isDeleted = ?) AS B ON A.id = B.sentenceId ORDER BY A.createdAt ASC LIMIT ${skip}, ${limit}`
           const filters = [roomId, false, roomId, userId, false]
           const [result] = await pool.query(sql, filters)
-          return res.status(200).json(messages.SUCCESS(result))
+          return res.json(messages.SUCCESS(result))
         } else {
           const sql = `SELECT id, text, userId, updatedAt, updatedAt, \`like\`, dislike FROM sentences WHERE roomId = ? AND isDeleted = ? ORDER BY createdAt ASC LIMIT ${skip}, ${limit}`
           const filters = [roomId, false]
           const [result] = await pool.query(sql, filters)
-          return res.status(200).json(messages.SUCCESS(result))
+          return res.json(messages.SUCCESS(result))
         }
       } catch (err) {
         return errHandlerCallback(err)
@@ -53,7 +54,7 @@ module.exports = (pool) => {
         const fields = [roomId]
         const [result] = await pool.query(sql, fields)
 
-        return res.status(200).json(messages.SUCCESS(result))
+        return res.json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -91,12 +92,12 @@ module.exports = (pool) => {
   // @method : POST
   // @body: userId: string, sentenceId: string, roomId: string, isLike: boolean
   api.post('/likedislikes', (req, res) => {
+    // TOOD: 라우터 이름 바꾸기 to => like
     const sentenceId = req.body.sentenceId
     const roomId = req.body.roomId
     const isLike = req.body.isLike
     const userId = req.body.userId
-    console.log(sentenceId, isLike)
-    console.log(roomId, userId)
+
     const runQuery = async (errHandlerCallback) => {
       try {
         const sql = 'INSERT INTO sentenceslikes(sentenceId, userId, roomId, isLike) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE isLike = ?'

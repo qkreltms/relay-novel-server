@@ -43,10 +43,11 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
   `writerLimit` INT NOT NULL DEFAULT 100,
   `tags` VARCHAR(255) NULL,
   `title` VARCHAR(255) NULL,
+  `genre` VARCHAR(255) NULL,
   `desc` LONGTEXT NULL,
+  `coverImage` VARCHAR(255) NULL,
   `creatorId` INT NOT NULL,
   `like` INT UNSIGNED NOT NULL DEFAULT 0,
-  `dislike` INT UNSIGNED NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -116,15 +117,15 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `idx_comments_userId` (`userId` ASC) INVISIBLE,
-  INDEX `idx_comments_roomId` (`roomId` ASC) VISIBLE,
+  INDEX `fk_comments_roomId_idx` (`roomId` ASC) VISIBLE,
   CONSTRAINT `fk_comments_roomId`
     FOREIGN KEY (`roomId`)
-    REFERENCES `relay_novel`.`RoomJoinedUsers` (`roomId`)
+    REFERENCES `relay_novel`.`Rooms` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_comments_userId`
     FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`RoomJoinedUsers` (`userId`)
+    REFERENCES `relay_novel`.`Users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -184,16 +185,16 @@ ENGINE = InnoDB;
 -- Table `relay_novel`.`SentencesLikes`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesLikes` (
-  `sentenceId` INT NOT NULL,
   `userId` INT NOT NULL,
+  `sentenceId` INT NOT NULL,
   `roomId` INT NOT NULL,
   `isLike` TINYINT UNSIGNED NOT NULL DEFAULT 0,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (`sentenceId`),
   INDEX `fk_sentencesLikes_userId` (`userId` ASC) VISIBLE,
   INDEX `fk_sentencesLikes_roomId` (`roomId` ASC) VISIBLE,
+  PRIMARY KEY (`userId`, `sentenceId`),
   CONSTRAINT `fk_sentencesLikes_userId`
     FOREIGN KEY (`userId`)
     REFERENCES `relay_novel`.`Sentences` (`userId`)
@@ -238,25 +239,25 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`RoomLikesDislikes`
+-- Table `relay_novel`.`RoomLikes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomLikesDislikes` (
+CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomLikes` (
   `roomId` INT NOT NULL,
   `userId` INT NOT NULL,
   `isLike` TINYINT UNSIGNED NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  INDEX `fk_roomLikesDislikes_userId_idx` (`userId` ASC) INVISIBLE,
   PRIMARY KEY (`roomId`, `userId`),
-  CONSTRAINT `fk_roomLikesDislikes_roomId`
+  INDEX `fk_roomLikes_userId_idx` (`userId` ASC) VISIBLE,
+  CONSTRAINT `fk_roomLikes_roomId`
     FOREIGN KEY (`roomId`)
     REFERENCES `relay_novel`.`Rooms` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_roomLikesDislikes_userId`
+  CONSTRAINT `fk_roomLikes_userId`
     FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`Rooms` (`creatorId`)
+    REFERENCES `relay_novel`.`Users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -339,23 +340,37 @@ BEGIN
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_AFTER_UPDATE` AFTER UPDATE ON `SentencesLikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_BEFORE_UPDATE` BEFORE UPDATE ON `SentencesLikes` FOR EACH ROW
 BEGIN
-	IF (NEW.isLike = true) THEN
+IF (NEW.isDeleted = false) THEN
+	IF (OLD.isLike = true AND NEW.isLike = false) THEN
+		UPDATE sentences SET `like` = `like` - 1 WHERE id = NEW.sentenceId;
+        UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = NEW.sentenceId;
+	ELSEIF (OLD.isLike = false AND NEW.isLike = true) THEN
 		UPDATE sentences SET `like` = `like` + 1 WHERE id = NEW.sentenceId;
-	ELSE 
-		UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = NEW.sentenceId;
+        UPDATE sentences SET `dislike` = `dislike` - 1 WHERE id = NEW.sentenceId;
+	ELSEIF (OLD.isLike = true AND NEW.isLike = true) THEN 
+        UPDATE sentences SET `like` = `like` - 1 WHERE id = NEW.sentenceId;
+        SET NEW.isdeleted = true;
+	ELSEIF (OLD.isLike = false AND NEW.isLike = false) THEN
+        UPDATE sentences SET `dislike` = `dislike` - 1 WHERE id = NEW.sentenceId;
+        SET NEW.isdeleted = true;
 	END IF;
-END$$
-
-USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_AFTER_DELETE` AFTER DELETE ON `SentencesLikes` FOR EACH ROW
-BEGIN
-	IF (OLD.isLike = true) THEN
-		UPDATE sentences SET `like` = `like` + 1 WHERE id = OLD.sentenceId;
-	ELSE 
-		UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = OLD.sentenceId;
+ELSE
+    IF (OLD.isLike = true AND NEW.isLike = true) THEN
+        UPDATE sentences SET `like` = `like` + 1 WHERE id = NEW.sentenceId;
+        SET NEW.isDeleted = false;
+	ELSEIF (OLD.isLike = false AND NEW.isLike = false) THEN
+        UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = NEW.sentenceId;
+        SET NEW.isDeleted = false;
+	ELSEIF (OLD.isLike = true AND NEW.isLike = false) THEN
+        UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = NEW.sentenceId;
+        SET NEW.isDeleted = false;
+	ELSEIF (OLD.isLike = false AND NEW.isLike = true) THEN
+        UPDATE sentences SET `like` = `like` + 1 WHERE id = NEW.sentenceId;
+        SET NEW.isDeleted = false;
 	END IF;
+END IF;
 END$$
 
 USE `relay_novel`$$
@@ -389,33 +404,25 @@ BEGIN
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikesDislikes_AFTER_INSERT` AFTER INSERT ON `RoomLikesDislikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikes_AFTER_INSERT` AFTER INSERT ON `RoomLikes` FOR EACH ROW
 BEGIN
-	IF (NEW.isLike = true) THEN
-		UPDATE rooms SET `like` = `like` + 1 WHERE id = NEW.roomId;
-	ELSE 
-		UPDATE rooms SET `dislike` = `dislike` + 1 WHERE id = NEW.roomId;
-	END IF;
+    IF (NEW.isLike = true) THEN
+        UPDATE rooms SET `like` = `like` + 1 WHERE id = NEW.roomId;
+    END IF;
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikesDislikes_AFTER_UPDATE` AFTER UPDATE ON `RoomLikesDislikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikes_BEFORE_UPDATE` BEFORE UPDATE ON `RoomLikes` FOR EACH ROW
 BEGIN
-	IF (NEW.isLike = true) THEN
-		UPDATE rooms SET `like` = `like` - 1 WHERE id = NEW.roomId;
+    IF (NEW.isDeleted = false) THEN
+        SET NEW.isLike = false;
+        SET NEW.isDeleted = true;
+        UPDATE rooms SET `like` = `like` - 1 WHERE id = NEW.roomId;
 	ELSE 
-		UPDATE rooms SET `dislike` = `dislike` - 1 WHERE id = NEW.roomId;
-	END IF;
-END$$
-
-USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikesDislikes_AFTER_DELETE` AFTER DELETE ON `RoomLikesDislikes` FOR EACH ROW
-BEGIN
-	IF (OLD.isLike = true) THEN
-		UPDATE rooms SET `like` = `like` - 1 WHERE id = OLD.roomId;
-	ELSE 
-		UPDATE rooms SET `dislike` = `dislike` - 1 WHERE id = OLD.roomId;
-	END IF;
+        SET NEW.isLike = true;
+        SET NEW.isDeleted = false;
+        UPDATE rooms SET `like` = `like` + 1 WHERE id = NEW.roomId;
+    END IF;
 END$$
 
 

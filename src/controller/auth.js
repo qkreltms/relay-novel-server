@@ -25,7 +25,7 @@ module.exports = (pool) => {
   // @method : GET
   api.get('/session/success', (req, res) => {
     let user = req.user
-    res.status(200).json(messages.SUCCESS(user))
+    res.json(messages.SUCCESS(user))
   })
 
   // @desc : 로컬 로그인
@@ -56,7 +56,7 @@ module.exports = (pool) => {
       res.clearCookie(config.SESSION_COOKIE_KEY)
 
       req.logout()
-      return res.status(200).json(messages.SUCCESS())
+      return res.json(messages.SUCCESS())
     }
 
     return run(errorHandler(res))
@@ -106,7 +106,7 @@ module.exports = (pool) => {
           const fields = [ nickname, email, hash, salt, thumbnail ]
           await pool.query('INSERT INTO users SET nickname = ?, email = ?, password = ?, salt = ?, thumbnail = ?', fields)
 
-          return res.status(200).json(messages.SUCCESS())
+          return res.json(messages.SUCCESS())
         } catch (err) {
           return errHandlerCallback(err)
         }

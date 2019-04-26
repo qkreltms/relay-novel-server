@@ -12,7 +12,7 @@ module.exports = (pool) => {
     const user = req.user
 
     try {
-      return res.status(200).json(messages.SUCCESS(user))
+      return res.json(messages.SUCCESS(user))
     } catch (err) {
       return res.status(500).json(messages.ERROR(err))
     }
@@ -79,7 +79,7 @@ module.exports = (pool) => {
         const fields = [ false, userId ]
         const [result] = await pool.query(sql, fields)
 
-        return res.json(messages.SUCCESS(result))
+        return res.status(204).json(messages.SUCCESS(result))
       } catch (err) {
         errHandlerCallback(err)
       }

@@ -18,15 +18,15 @@ module.exports = (pool) => {
     const runQuery = async (errHandlerCallback) => {
       try {
         if (roomId) {
-          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, \`dislike\`, creatorId, updatedAt, createdAt FROM rooms WHERE id = ? AND isDeleted = ?`
+          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE id = ? AND isDeleted = ?`
           const fields = [roomId, false]
           const [result] = await pool.query(sql, fields)
-          return res.status(200).json(messages.SUCCESS(result))
+          return res.json(messages.SUCCESS(result))
         } else {
-          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, \`dislike\`, creatorId, updatedAt, createdAt FROM rooms WHERE isDeleted = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
+          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE isDeleted = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
           const fields = [false]
           const [result] = await pool.query(sql, fields)
-          return res.status(200).json(messages.SUCCESS(result))
+          return res.json(messages.SUCCESS(result))
         }
       } catch (err) {
         return errHandlerCallback(err)
@@ -49,7 +49,7 @@ module.exports = (pool) => {
         const fields = [roomId, false]
         const [result] = await pool.query(sql, fields)
 
-        return res.status(200).json(messages.SUCCESS(result))
+        return res.json(messages.SUCCESS(result))
       } catch (err) {
         // TODO: duplicate 떠도 섭단에서 에러 안뜨도록
         return errHandlerCallback(err)
@@ -71,9 +71,14 @@ module.exports = (pool) => {
       try {
         const sql = `SELECT writeable FROM roomJoinedUsers WHERE roomId = ? AND userId = ?`
         const fields = [roomId, userId]
-        const [[{ writeable }]] = await pool.query(sql, fields)
+        const [result] = await pool.query(sql, fields)
 
-        return res.status(200).json(messages.SUCCESS(writeable))
+        let writeable = false
+        if (result[0]) {
+          writeable = result[0].writeable
+        }
+
+        return res.json(messages.SUCCESS(writeable))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -92,7 +97,7 @@ module.exports = (pool) => {
         const fields = [0]
         const [result] = await pool.query(sql, fields)
 
-        return res.status(200).json(messages.SUCCESS(result))
+        return res.json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -124,7 +129,7 @@ module.exports = (pool) => {
         await conn.query('COMMIT')
         await conn.release()
 
-        return res.status(200).json(messages.SUCCESS(result))
+        return res.json(messages.SUCCESS(result))
       } catch (err) {
         await conn.query('ROLLBACK')
         await conn.release()
@@ -149,7 +154,56 @@ module.exports = (pool) => {
         const field = [roomId]
         const [[{ writerLimit }]] = await pool.query(sql, field)
 
-        return res.status(200).json(messages.SUCCESS(writerLimit))
+        return res.json(messages.SUCCESS(writerLimit))
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
+
+  // @desc : 방에서 좋아요를 눌렀는지 안눌렀는지 확인
+  // @url : http://localhost:3001/api/rooms/isLike
+  // @method : GET
+  // @query : userId: string, roomId: string
+  api.get('/isLike', (req, res) => {
+    const roomId = req.query.roomId
+    const userId = req.query.userId
+
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `SELECT isLike FROM roomLikes WHERE roomId = ? AND userId = ?`
+        const field = [roomId, userId]
+        const [[result]] = await pool.query(sql, field)
+
+        if (!result) return res.json(messages.SUCCESS({ isLike: false }))
+        return res.json(messages.SUCCESS({ isLike: result.isLike || false }))
+      } catch (err) {
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
+
+  // @desc : 방 좋아요 추가
+  // @url : http://localhost:3001/api/rooms/like
+  // @method : POST
+  // @body : userId: string, roomId: string, isLike: string
+  api.post('/like', (req, res) => {
+    const roomId = req.body.roomId
+    const userId = req.body.userId
+    const isLike = req.body.isLike
+
+    const runQuery = async (errHandlerCallback) => {
+      try {
+        const sql = `INSERT INTO roomLikes(roomId, userId, isLike) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE isLike = ?`
+        const field = [roomId, userId, isLike, isLike]
+        const [result] = await pool.query(sql, field)
+
+        if (result.affectedRows > 1) return res.json(messages.SUCCESS(result))
+        return res.status(201).json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -209,7 +263,7 @@ module.exports = (pool) => {
         await conn.release()
 
         result.insertId = insertId
-        return res.json(messages.SUCCESS(result))
+        return res.status(201).json(messages.SUCCESS(result))
       } catch (err) {
         await conn.query('ROLLBACK')
         await conn.release()
@@ -235,7 +289,7 @@ module.exports = (pool) => {
         const fields = [userId, roomId, true]
         const result = await pool.query(sql, fields)
 
-        return res.json(messages.SUCCESS(result))
+        return res.status(201).json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -246,42 +300,7 @@ module.exports = (pool) => {
 
   // TODO: 방 참가 나가기
   // TODO: 방 삭제
-
-  // @desc : 방 수정
-  // @url : http://localhost:3001/api/rooms
-  // @method : PUT
-  // @body: roomId: string, writerLimit: string, tags: string, title: string, desc: string
-  api.put('/', checkLoggedIn, (req, res) => {
-    const roomId = req.body.roomId
-    const writerLimit = req.body.writerLimit
-    const tags = req.body.tags
-    const title = req.body.title
-    const desc = req.body.desc
-    const userId = req.user.id
-    const isDeleted = req.body.isDeleted
-    // TODO: isdeleted string to boolean 형 확인
-    const runQuery = async (errHandlerCallback) => {
-      try {
-        const sql = `UPDATE rooms SET writerLimit = ?, tags = ?, title = ?, \`desc\` = ?, isDeleted = ? WHERE roomid = ? AND userid = ?`
-        const fields = {
-          writerLimit,
-          tags,
-          title,
-          desc,
-          roomId,
-          userId,
-          isDeleted
-        }
-        const [result] = await pool.query(sql, fields)
-
-        return res.json(messages.SUCCESS(result))
-      } catch (err) {
-        return errHandlerCallback(err)
-      }
-    }
-
-    return runQuery(errHandler(res))
-  })
+  // TODO: 방 수정
 
   return api
 }

@@ -75,12 +75,13 @@ SELECT isLike, `text`, userId, updatedAt, createdAt, `like`, dislike
   ON a.userId = b.userId
   );
   
-SELECT id, isLike, `text`, updatedAt, createdAt, `like`, dislike from (select id, `text`, userId, updatedAt, createdAt, `like`, dislike from sentences where roomId = 1) as a left join  (
+SELECT id, isLike, `text`, updatedAt, createdAt, `like`, dislike from (select id, `text`, userId, updatedAt, createdAt, `like`, dislike from sentences where roomId = 2) as a left join  (
   select sentenceId, userId, isLike 
   from sentencesLikes 
-  where roomId = 1 AND userId = 1
+  where roomId = 2 AND userId = 1
   ) as b
   ON a.id = b.sentenceId;
+  
   select id, `text`, userId, updatedAt, createdAt, `like`, dislike from sentences where roomId = 2;
   select sentenceId, userId, isLike from sentencesLikes where roomId = 2 AND userId = 1;
 /*
@@ -109,7 +110,7 @@ alter table sentences modify `like` JSON;
 trigger
 */
 show triggers;
-drop trigger SentencesLikes_AFTER_UPDATE;
+drop trigger SentencesLikes_BEFORE_UPDATE;
 
 DELIMITER $$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomLikeDislike_AFTER_DELETE` AFTER DELETE ON `RoomLikeDislike` FOR EACH ROW
@@ -139,9 +140,9 @@ CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_BEFORE_INSE
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_AFTER_UPDATE` AFTER UPDATE ON `SentencesLikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`SentencesLikes_BEFORE_UPDATE` BEFORE UPDATE ON `SentencesLikes` FOR EACH ROW
 BEGIN
-IF (NEW.isDeleted = true) THEN
+IF (NEW.isDeleted = false) THEN
 	IF (OLD.isLike = true AND NEW.isLike = false) THEN
 		UPDATE sentences SET `like` = `like` - 1 WHERE id = NEW.sentenceId;
         UPDATE sentences SET `dislike` = `dislike` + 1 WHERE id = NEW.sentenceId;
