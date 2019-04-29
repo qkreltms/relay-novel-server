@@ -192,12 +192,11 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesLikes` (
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  INDEX `fk_sentencesLikes_userId` (`userId` ASC) VISIBLE,
-  INDEX `fk_sentencesLikes_roomId` (`roomId` ASC) VISIBLE,
   PRIMARY KEY (`userId`, `sentenceId`),
+  INDEX `fk_sentencesLikes_roomId_idx` (`roomId` ASC) VISIBLE,
   CONSTRAINT `fk_sentencesLikes_userId`
     FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`Sentences` (`userId`)
+    REFERENCES `relay_novel`.`Users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_sentencesLikes_sentenceId`
@@ -207,7 +206,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`SentencesLikes` (
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_sentencesLikes_roomId`
     FOREIGN KEY (`roomId`)
-    REFERENCES `relay_novel`.`Sentences` (`roomId`)
+    REFERENCES `relay_novel`.`Rooms` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;

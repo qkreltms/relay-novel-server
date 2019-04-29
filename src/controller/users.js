@@ -41,8 +41,9 @@ module.exports = (pool) => {
   // @desc: 유저 삭제
   // @url: http://localhost:3001/api/users
   // @method: DELETE
-  api.delete('/', checkLoggedIn, (req, res) => {
-    const userId = req.user.id
+  // @body: userId: string
+  api.delete('/', (req, res) => {
+    const userId = req.body.userId
 
     const runQuery = async (errHandlerCallback) => {
       try {
@@ -70,8 +71,9 @@ module.exports = (pool) => {
   // @desc: 유저 삭제 취소
   // @url: http://localhost:3001/api/users
   // @method: PATCH
-  api.patch('/', checkLoggedIn, (req, res) => {
-    const userId = req.user.id
+  // @body: userId: string
+  api.patch('/', (req, res) => {
+    const userId = req.body.userId
 
     const runQuery = async (errHandlerCallback) => {
       try {

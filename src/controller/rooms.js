@@ -1,33 +1,23 @@
 module.exports = (pool) => {
   const messages = require('../messages')
-  const {
-    checkLoggedIn
-  } = require('../middleware/authenticate')
   const api = require('express').Router()
   const errHandler = require('../queryErrorHandler')
 
   // @desc : 모든 방 출력
   // @url : http://localhost:3001/api/rooms
   // @method : GET
-  // @query : skip: String, limit: String, roomId?: string
+  // @query : skip: String, limit: String
   api.get('/', (req, res) => {
     const skip = req.query.skip || 0
     const limit = req.query.limit || 30
-    const roomId = req.query.roomId
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        if (roomId) {
-          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE id = ? AND isDeleted = ?`
-          const fields = [roomId, false]
-          const [result] = await pool.query(sql, fields)
-          return res.json(messages.SUCCESS(result))
-        } else {
-          const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE isDeleted = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
-          const fields = [false]
-          const [result] = await pool.query(sql, fields)
-          return res.json(messages.SUCCESS(result))
-        }
+        const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE isDeleted = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
+        const fields = [false]
+        const [result] = await pool.query(sql, fields)
+
+        return res.json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -51,7 +41,6 @@ module.exports = (pool) => {
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
-        // TODO: duplicate 떠도 섭단에서 에러 안뜨도록
         return errHandlerCallback(err)
       }
     }
@@ -62,10 +51,10 @@ module.exports = (pool) => {
   // @desc : 방에 참가했는지 확인
   // @url : http://localhost:3001/api/rooms/writeable
   // @method : GET
-  // @query : roomId: string
-  api.get('/writeable', checkLoggedIn, (req, res) => {
+  // @query : roomId: string, userId: string
+  api.get('/writeable', (req, res) => {
     const roomId = req.query.roomId
-    const userId = req.user.id
+    const userId = req.query.userId
 
     const runQuery = async (errHandlerCallback) => {
       try {
@@ -97,7 +86,12 @@ module.exports = (pool) => {
         const fields = [0]
         const [result] = await pool.query(sql, fields)
 
-        return res.json(messages.SUCCESS(result))
+        let total = 0
+        if (result[0]) {
+          total = result[0].total
+        }
+
+        return res.json(messages.SUCCESS(total))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -120,16 +114,17 @@ module.exports = (pool) => {
         await conn.query('START TRANSACTION')
         const sql = `SELECT total FROM roomJoinedUsersInfo WHERE roomId = ?`
         const fields = [roomId]
-        const [[{ total }]] = await conn.query(sql, fields)
+        const [result] = await conn.query(sql, fields)
 
-        const result = {
-          slot: total || 0
+        let slot = 0
+        if (result[0]) {
+          slot = result[0].slot
         }
 
         await conn.query('COMMIT')
         await conn.release()
 
-        return res.json(messages.SUCCESS(result))
+        return res.json(messages.SUCCESS(slot))
       } catch (err) {
         await conn.query('ROLLBACK')
         await conn.release()
@@ -152,7 +147,12 @@ module.exports = (pool) => {
       try {
         const sql = `SELECT writerLimit FROM rooms WHERE id = ?`
         const field = [roomId]
-        const [[{ writerLimit }]] = await pool.query(sql, field)
+        const [result] = await pool.query(sql, field)
+
+        let writerLimit = 0
+        if (result[0]) {
+          writerLimit = result[0].writerLimit
+        }
 
         return res.json(messages.SUCCESS(writerLimit))
       } catch (err) {
@@ -215,13 +215,13 @@ module.exports = (pool) => {
   // @desc : 방 생성
   // @url : http://localhost:3001/api/rooms
   // @method : POST
-  // @body : writerLimit?: String, tags?: String, title: String, desc: String
-  api.post('/', checkLoggedIn, (req, res) => {
+  // @body : userId: string, writerLimit?: String, tags?: String, title: String, desc: String
+  api.post('/', (req, res) => {
     const writerLimit = req.body.writerLimit
     const tags = req.body.tags
     const title = req.body.title
     const desc = req.body.desc
-    const creatorId = req.user.id
+    const creatorId = req.body.userId
     const runQuery = async (errHandlerCallback) => {
       const conn = await pool.getConnection()
 
@@ -278,10 +278,10 @@ module.exports = (pool) => {
   // @desc : 방 글쓰기 참가
   // @url : http://localhost:3001/api/rooms/join
   // @method : POST
-  // @body: roomId: string
-  api.post('/join', checkLoggedIn, (req, res) => {
+  // @body: roomId: string, userId: string
+  api.post('/join', (req, res) => {
     const roomId = req.body.roomId
-    const userId = req.user.id
+    const userId = req.body.userId
 
     const runQuery = async (errHandlerCallback) => {
       try {
