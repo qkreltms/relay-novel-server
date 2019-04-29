@@ -3,6 +3,77 @@ module.exports = (pool) => {
   const api = require('express').Router()
   const errHandler = require('../queryErrorHandler')
 
+  // @desc : 방에 참가한 유저, 쓰기가능 여부, 방 좋아요 눌렀는지 출력
+  // @url : http://localhost:3001/api/rooms/info
+  // @method : GET
+  // @query : roomId: string, userId: string
+  api.get('/info', (req, res) => {
+    const roomId = req.query.roomId
+    const userId = req.query.userId
+    const isLoggedIn = req.query.isLoggedIn === 'false' ? 0 : 1
+
+    const runQuery = async (errHandlerCallback) => {
+      const conn = await pool.getConnection()
+      const result = {
+        joinedUserTotal: 0,
+        isWriteable: false,
+        isLike: false,
+        writerLimit: 0,
+        novelTotal: 0
+      }
+
+      try {
+        await conn.query('START TRANSACTION')
+        const sql2 = `SELECT total FROM roomJoinedUsersInfo WHERE roomId = ?`
+        const fields2 = [roomId]
+        result.joinedUserTotal = await conn.query(sql2, fields2)
+        result.joinedUserTotal = result.joinedUserTotal[0][0].total
+
+        const sql5 = `SELECT writerLimit FROM rooms WHERE id = ?`
+        const field5 = [roomId]
+        result.writerLimit = await conn.query(sql5, field5)
+        result.writerLimit = result.writerLimit[0][0].writerLimit
+
+        const sql6 = `SELECT total FROM sentencesInfo WHERE roomId = ?`
+        const fields6 = [roomId]
+        result.novelTotal = await conn.query(sql6, fields6)
+        result.novelTotal = result.novelTotal[0][0].total
+
+        if (isLoggedIn) {
+          const sql3 = `SELECT writeable FROM roomJoinedUsers WHERE roomId = ? AND userId = ?`
+          const fields3 = [roomId, userId]
+          result.isWriteable = await conn.query(sql3, fields3)
+          if (result.isWriteable[0][0]) {
+            result.isWriteable = result.isWriteable[0][0].writeable
+          } else {
+            result.isWriteable = false
+          }
+
+          const sql4 = `SELECT isLike FROM roomLikes WHERE roomId = ? AND userId = ?`
+          const field4 = [roomId, userId]
+          result.isLike = await conn.query(sql4, field4)
+          if (result.isLike[0][0]) {
+            result.isLike = result.isLike[0][0].isLike
+          } else {
+            result.isLike = false
+          }
+        }
+
+        await conn.query('COMMIT')
+        await conn.release()
+
+        return res.json(messages.SUCCESS(result))
+      } catch (err) {
+        await conn.query('ROLLBACK')
+        await conn.release()
+
+        return errHandlerCallback(err)
+      }
+    }
+
+    return runQuery(errHandler(res))
+  })
+
   // @desc : 모든 방 출력
   // @url : http://localhost:3001/api/rooms
   // @method : GET
@@ -91,7 +162,7 @@ module.exports = (pool) => {
           total = result[0].total
         }
 
-        return res.json(messages.SUCCESS(total))
+        return res.json(messages.SUCCESS({ total: total }))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -101,34 +172,25 @@ module.exports = (pool) => {
   })
 
   // @desc : 방 참가 가능한 슬롯 출력
-  // @url : http://localhost:3001/api/rooms/slot
+  // @url : http://localhost:3001/api/rooms/available_slot
   // @method : GET
   // @query : roomId: string
-  api.get('/slot', (req, res) => {
+  api.get('/joinedUser/total', (req, res) => {
     const roomId = req.query.roomId
 
     const runQuery = async (errHandlerCallback) => {
-      const conn = await pool.getConnection()
-
       try {
-        await conn.query('START TRANSACTION')
         const sql = `SELECT total FROM roomJoinedUsersInfo WHERE roomId = ?`
         const fields = [roomId]
-        const [result] = await conn.query(sql, fields)
+        const [result] = await pool.query(sql, fields)
 
-        let slot = 0
+        let joinedUserTotal = 0
         if (result[0]) {
-          slot = result[0].slot
+          joinedUserTotal = result[0].total
         }
 
-        await conn.query('COMMIT')
-        await conn.release()
-
-        return res.json(messages.SUCCESS(slot))
+        return res.json(messages.SUCCESS({ joinedUserTotal: joinedUserTotal }))
       } catch (err) {
-        await conn.query('ROLLBACK')
-        await conn.release()
-
         return errHandlerCallback(err)
       }
     }
@@ -137,10 +199,10 @@ module.exports = (pool) => {
   })
 
   // @desc : 방 인원 제한 출력
-  // @url : http://localhost:3001/api/rooms/limit
+  // @url : http://localhost:3001/api/rooms/writerLimit
   // @method : GET
   // @query : roomId: string
-  api.get('/limit', (req, res) => {
+  api.get('/writerLimit', (req, res) => {
     const roomId = req.query.roomId
 
     const runQuery = async (errHandlerCallback) => {
@@ -154,7 +216,7 @@ module.exports = (pool) => {
           writerLimit = result[0].writerLimit
         }
 
-        return res.json(messages.SUCCESS(writerLimit))
+        return res.json(messages.SUCCESS({ writerLimit: writerLimit }))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -175,10 +237,14 @@ module.exports = (pool) => {
       try {
         const sql = `SELECT isLike FROM roomLikes WHERE roomId = ? AND userId = ?`
         const field = [roomId, userId]
-        const [[result]] = await pool.query(sql, field)
+        const [result] = await pool.query(sql, field)
 
-        if (!result) return res.json(messages.SUCCESS({ isLike: false }))
-        return res.json(messages.SUCCESS({ isLike: result.isLike || false }))
+        let isLike = false
+        if (result[0]) {
+          isLike = result[0].isLike
+        }
+
+        return res.json(messages.SUCCESS({ isLike: isLike }))
       } catch (err) {
         return errHandlerCallback(err)
       }
@@ -236,7 +302,9 @@ module.exports = (pool) => {
           desc,
           creatorId
         }
-        const [{ insertId }] = await conn.query(sql, fields)
+        const [{
+          insertId
+        }] = await conn.query(sql, fields)
         const createdRoomId = insertId
 
         const sql4 = `INSERT INTO roomJoinedUsersInfo SET ?`

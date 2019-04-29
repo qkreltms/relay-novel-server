@@ -94,11 +94,14 @@ module.exports = (pool) => {
 
     const runQuery = async (errHandlerCallback) => {
       try {
-        // TODO: 왜 커넥션 풀 2번 할당됨??
         const sql = 'INSERT INTO sentenceslikes(sentenceId, userId, roomId, isLike) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE isLike = ?'
         const fields = [sentenceId, userId, roomId, isLike, isLike]
         const [result] = await pool.query(sql, fields)
-        // TODO: update시에는 204 insert 시에는 201
+
+        // 업데이트 시에는 204 반환
+        if (result.affectedRows >= 2) {
+          return res.status(204).json(messages.SUCCESS(result))
+        }
         return res.status(201).json(messages.SUCCESS(result))
       } catch (err) {
         return errHandlerCallback(err)
