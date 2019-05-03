@@ -18,8 +18,16 @@ module.exports = (pool) => {
         joinedUserTotal: 0,
         isWriteable: false,
         isLike: false,
+        novelTotal: 0,
         writerLimit: 0,
-        novelTotal: 0
+        tags: '',
+        title: '',
+        genre: '',
+        desc: '',
+        coverImage: '',
+        user: {},
+        like: 0,
+        createdAt: new Date()
       }
 
       try {
@@ -29,10 +37,25 @@ module.exports = (pool) => {
         result.joinedUserTotal = await conn.query(sql2, fields2)
         result.joinedUserTotal = result.joinedUserTotal[0][0].total
 
-        const sql5 = `SELECT writerLimit FROM rooms WHERE id = ?`
+        const sql5 = `SELECT tags, genre, createdAt, \`like\`, writerLimit, tags, title, genre, \`desc\`, coverImage, creatorId FROM rooms WHERE id = ?`
         const field5 = [roomId]
-        result.writerLimit = await conn.query(sql5, field5)
-        result.writerLimit = result.writerLimit[0][0].writerLimit
+        const [[roomInfo]] = await conn.query(sql5, field5)
+        const creatorId = roomInfo.creatorId
+        result.coverImage = roomInfo.coverImage
+        result.desc = roomInfo.desc
+        result.genre = roomInfo.genre
+        result.title = roomInfo.title
+        result.tags = roomInfo.tags
+        result.writerLimit = roomInfo.writerLimit
+        result.createdAt = roomInfo.createdAt
+        result.like = roomInfo.like
+        result.genre = roomInfo.genre
+        result.tags = roomInfo.tags
+
+        const sql7 = `SELECT nickname, thumbnail FROM users WHERE id = ?`
+        const field7 = [creatorId]
+        result.user = await conn.query(sql7, field7)
+        result.user = result.user[0][0]
 
         const sql6 = `SELECT total FROM sentencesInfo WHERE roomId = ?`
         const fields6 = [roomId]
@@ -281,13 +304,16 @@ module.exports = (pool) => {
   // @desc : 방 생성
   // @url : http://localhost:3001/api/rooms
   // @method : POST
-  // @body : userId: string, writerLimit?: String, tags?: String, title: String, desc: String
+  // @body : userId: string, writerLimit?: String, tags?: String, title: String, desc?: String, coverImage?: string
   api.post('/', (req, res) => {
     const writerLimit = req.body.writerLimit
     const tags = req.body.tags
     const title = req.body.title
     const desc = req.body.desc
     const creatorId = req.body.userId
+    const genre = req.body.genre
+    const coverImage = req.body.coverImage
+
     const runQuery = async (errHandlerCallback) => {
       const conn = await pool.getConnection()
 
@@ -300,7 +326,9 @@ module.exports = (pool) => {
           tags,
           title,
           desc,
-          creatorId
+          creatorId,
+          genre,
+          coverImage
         }
         const [{
           insertId
@@ -311,7 +339,7 @@ module.exports = (pool) => {
         const fields4 = {
           roomId: createdRoomId
         }
-        const [result] = await conn.query(sql4, fields4)
+        await conn.query(sql4, fields4)
 
         const sql2 = 'INSERT INTO roomJoinedUsers(userId, roomId, writeable) VALUES (?, ?, ?) '
         const fields2 = [
@@ -330,8 +358,7 @@ module.exports = (pool) => {
         await conn.query('COMMIT')
         await conn.release()
 
-        result.insertId = insertId
-        return res.status(201).json(messages.SUCCESS(result))
+        return res.status(201).json(messages.SUCCESS({ insertId: insertId }))
       } catch (err) {
         await conn.query('ROLLBACK')
         await conn.release()
