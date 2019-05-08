@@ -213,9 +213,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`CommentLikes`
+-- Table `relay_novel`.`CommentsLikes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentLikes` (
+CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentsLikes` (
   `commentId` INT NOT NULL,
   `userId` INT NOT NULL,
   `roomId` INT NOT NULL,
@@ -224,19 +224,19 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentLikes` (
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`commentId`, `userId`),
-  INDEX `fk_commentLikes_userId_idx` (`userId` ASC) VISIBLE,
-  INDEX `fk_commentLikes_roomId_idx` (`roomId` ASC) VISIBLE,
-  CONSTRAINT `fk_commentLikes_commentId`
+  INDEX `fk_commentsLikes_userId_idx` (`userId` ASC) VISIBLE,
+  INDEX `fk_commentsLikes_roomId_idx` (`roomId` ASC) VISIBLE,
+  CONSTRAINT `fk_commentsLikes_commentId`
     FOREIGN KEY (`commentId`)
     REFERENCES `relay_novel`.`Comments` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_commentLikes_userId`
+  CONSTRAINT `fk_commentsLikes_userId`
     FOREIGN KEY (`userId`)
     REFERENCES `relay_novel`.`Users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_commentLikes_roomId`
+  CONSTRAINT `fk_commentsLikes_roomId`
     FOREIGN KEY (`roomId`)
     REFERENCES `relay_novel`.`Rooms` (`id`)
     ON DELETE NO ACTION
@@ -395,7 +395,7 @@ END IF;
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikes_AFTER_INSERT` AFTER INSERT ON `CommentLikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentsLikes_AFTER_INSERT` AFTER INSERT ON `CommentsLikes` FOR EACH ROW
 BEGIN
 	IF (NEW.isLike = true) THEN
 		UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
@@ -405,7 +405,7 @@ BEGIN
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikes_BEFORE_UPDATE` BEFORE UPDATE ON `CommentLikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentsLikes_BEFORE_UPDATE` BEFORE UPDATE ON `CommentsLikes` FOR EACH ROW
 BEGIN
 	IF (NEW.isDeleted = false) THEN
 		IF (OLD.isLike = true AND NEW.isLike = false) THEN

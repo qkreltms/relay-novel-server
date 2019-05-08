@@ -17,7 +17,8 @@ desc rooms;
 desc roomJoinedUsers;
 desc sentences;
 desc roomvisitors;
-desc roomlikedislike;
+desc room;
+desc sentenceslikes;
 /*
 drop
 */
@@ -42,10 +43,12 @@ insert into roomlikedislike(roomId, userId, isLike) values(3, 1, false);
 insert into roomlikedislike(roomId, userId, isLike) values(3, 2, false);
 insert into roomlikedislike(roomId, userId, isLike) values(1, 2, false);
 insert into sentencesInfo(roomId, userId) values(1, 1);
-/*Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`relay_novel`.`sentences`, CONSTRAINT `fk_sentences_userId` FOREIGN KEY (`userId`) REFERENCES `sentencesinfo` (`userId`))
-
+INSERT INTO sentenceslikes(sentenceId, userId, roomId, isLike) VALUES (1, 2, 1, true) ON DUPLICATE KEY UPDATE isLike = true;
+/*
 select 
 */
+select * from comments;
+select * from roomlikes;
 select * from roomjoinedusersinfo;
 select * from roomsinfo;
 select * from sentencesInfo;
