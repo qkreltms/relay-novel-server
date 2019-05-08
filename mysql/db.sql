@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `writerLimit` INT NOT NULL DEFAULT 100,
   `tags` VARCHAR(255) NULL,
-  `title` VARCHAR(255) NULL,
+  `title` VARCHAR(255) NOT NULL,
   `genre` VARCHAR(255) NULL,
   `desc` LONGTEXT NULL,
   `coverImage` VARCHAR(255) NULL,
@@ -107,9 +107,9 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`Comments` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `text` TEXT NULL,
   `roomId` INT NOT NULL,
   `userId` INT NOT NULL,
+  `text` TEXT NULL,
   `like` INT UNSIGNED NOT NULL DEFAULT 0,
   `dislike` INT UNSIGNED NOT NULL DEFAULT 0,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -213,25 +213,32 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`CommentLikesDislikes`
+-- Table `relay_novel`.`CommentLikes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentLikesDislikes` (
+CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentLikes` (
   `commentId` INT NOT NULL,
   `userId` INT NOT NULL,
+  `roomId` INT NOT NULL,
   `isLike` TINYINT NOT NULL,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `isDeleted` TINYINT NOT NULL DEFAULT 0,
-  INDEX `fk_commentLikesDislikes_userId_idx` (`userId` ASC) VISIBLE,
   PRIMARY KEY (`commentId`, `userId`),
-  CONSTRAINT `fk_commentLikesDislikes_commentId`
+  INDEX `fk_commentLikes_userId_idx` (`userId` ASC) VISIBLE,
+  INDEX `fk_commentLikes_roomId_idx` (`roomId` ASC) VISIBLE,
+  CONSTRAINT `fk_commentLikes_commentId`
     FOREIGN KEY (`commentId`)
     REFERENCES `relay_novel`.`Comments` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_commentLikesDislikes_userId`
+  CONSTRAINT `fk_commentLikes_userId`
     FOREIGN KEY (`userId`)
-    REFERENCES `relay_novel`.`Comments` (`userId`)
+    REFERENCES `relay_novel`.`Users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_commentLikes_roomId`
+    FOREIGN KEY (`roomId`)
+    REFERENCES `relay_novel`.`Rooms` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -286,6 +293,21 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsersInfo` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+
+-- -----------------------------------------------------
+-- Table `relay_novel`.`CommentsInfo`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentsInfo` (
+  `roomId` INT NOT NULL,
+  `total` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`roomId`),
+  CONSTRAINT `fk_centencesInfo_roomId`
+    FOREIGN KEY (`roomId`)
+    REFERENCES `relay_novel`.`Rooms` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
 USE `relay_novel`;
 
 DELIMITER $$
@@ -319,7 +341,7 @@ END$$
 USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`Comments_AFTER_INSERT` AFTER INSERT ON `Comments` FOR EACH ROW
 BEGIN
-	UPDATE comments SET `total` = `total` + 1 WHERE id = NEW.id;
+	UPDATE commentsInfo SET `total` = `total` + 1 WHERE roomId = NEW.roomId;
 END$$
 
 USE `relay_novel`$$
@@ -373,7 +395,7 @@ END IF;
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikesDislikes_AFTER_INSERT` AFTER INSERT ON `CommentLikesDislikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikes_AFTER_INSERT` AFTER INSERT ON `CommentLikes` FOR EACH ROW
 BEGIN
 	IF (NEW.isLike = true) THEN
 		UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
@@ -383,22 +405,36 @@ BEGIN
 END$$
 
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikesDislikes_AFTER_UPDATE` AFTER UPDATE ON `CommentLikesDislikes` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikes_BEFORE_UPDATE` BEFORE UPDATE ON `CommentLikes` FOR EACH ROW
 BEGIN
-	IF (NEW.isLike = true) THEN
-		UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
-	ELSE 
-		UPDATE comments SET `dislike` = `dislike` + 1 WHERE id = NEW.commentId;
-	END IF;
-END$$
-
-USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`CommentLikesDislikes_AFTER_DELETE` AFTER DELETE ON `CommentLikesDislikes` FOR EACH ROW
-BEGIN
-	IF (OLD.isLike = true) THEN
-		UPDATE comments SET `like` = `like` + 1 WHERE id = OLD.commentId;
-	ELSE 
-		UPDATE comments SET `dislike` = `dislike` + 1 WHERE id = OLD.commentId;
+	IF (NEW.isDeleted = false) THEN
+		IF (OLD.isLike = true AND NEW.isLike = false) THEN
+			UPDATE comments SET `like` = `like` - 1 WHERE id = NEW.commentId;
+            UPDATE comments SET `dislike` = `dislike` + 1 WHERE id = NEW.commentId;
+		ELSEIF (OLD.isLike = false AND NEW.isLike = true) THEN
+			UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
+			UPDATE comments SET `dislike` = `dislike` - 1 WHERE id = NEW.commentId;
+		ELSEIF (OLD.isLike = true AND NEW.isLike = true) THEN 
+			UPDATE comments SET `like` = `like` - 1 WHERE id = NEW.commentId;
+			SET NEW.isdeleted = true;
+		ELSEIF (OLD.isLike = false AND NEW.isLike = false) THEN
+			UPDATE comments SET `dislike` = `dislike` - 1 WHERE id = NEW.commentId;
+			SET NEW.isdeleted = true;
+		END IF;
+	ELSE
+		IF (OLD.isLike = true AND NEW.isLike = true) THEN
+			UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
+			SET NEW.isDeleted = false;
+		ELSEIF (OLD.isLike = false AND NEW.isLike = false) THEN
+			UPDATE comments SET `dislike` = `dislike` + 1 WHERE id = NEW.commentId;
+			SET NEW.isDeleted = false;
+		ELSEIF (OLD.isLike = true AND NEW.isLike = false) THEN
+			UPDATE comments SET `dislike` = `dislike` + 1 WHERE id = NEW.commentId;
+			SET NEW.isDeleted = false;
+		ELSEIF (OLD.isLike = false AND NEW.isLike = true) THEN
+			UPDATE comments SET `like` = `like` + 1 WHERE id = NEW.commentId;
+			SET NEW.isDeleted = false;
+		END IF;
 	END IF;
 END$$
 

@@ -319,7 +319,6 @@ module.exports = (pool) => {
 
       try {
         await conn.query('START TRANSACTION')
-        // TODO: procedure에서 하기
         const sql = 'INSERT INTO rooms SET ?'
         const fields = {
           writerLimit,
@@ -354,6 +353,12 @@ module.exports = (pool) => {
           roomId: createdRoomId
         }
         await conn.query(sql3, fields3)
+
+        const sql5 = `INSERT INTO commentsInfo SET ?`
+        const fields5 = {
+          roomId: createdRoomId
+        }
+        await conn.query(sql5, fields5)
 
         await conn.query('COMMIT')
         await conn.release()
