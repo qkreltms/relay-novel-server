@@ -25,7 +25,7 @@ module.exports = (pool) => {
         genre: '',
         desc: '',
         coverImage: '',
-        user: {},
+        user: {}, // {nickname: string, thumbnail: string}
         like: 0,
         createdAt: new Date()
       }

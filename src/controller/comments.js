@@ -17,7 +17,7 @@ module.exports = (pool) => {
       try {
         if (userId) {
           // 댓글 배열 값에 내가 좋아요 누른 값 포함시킴
-          const sql = `SELECT id, isLike, \`text\`, updatedAt, createdAt, \`like\`, dislike FROM (SELECT id, \`text\`, userId, updatedAt, createdAt, \`like\`, dislike FROM comments WHERE roomId = ? AND isDeleted = ?) AS A LEFT JOIN (SELECT commentId, userId, isLike FROM commentLikes WHERE roomId = ? AND userId = ? AND isDeleted = ?) AS B ON A.id = B.commentId ORDER BY A.createdAt DESC LIMIT ${skip}, ${limit}`
+          const sql = `SELECT id, isLike, \`text\`, updatedAt, createdAt, \`like\`, dislike FROM (SELECT id, \`text\`, userId, updatedAt, createdAt, \`like\`, dislike FROM comments WHERE roomId = ? AND isDeleted = ?) AS A LEFT JOIN (SELECT commentId, userId, isLike FROM commentsLikes WHERE roomId = ? AND userId = ? AND isDeleted = ?) AS B ON A.id = B.commentId ORDER BY A.createdAt DESC LIMIT ${skip}, ${limit}`
           const filters = [roomId, false, roomId, userId, false]
           const [result] = await pool.query(sql, filters)
           return res.json(messages.SUCCESS(result))
@@ -69,8 +69,6 @@ module.exports = (pool) => {
     const roomId = req.body.roomId
     const isLike = req.body.isLike
     const userId = req.body.userId
-    console.log(commentId, roomId)
-    console.log(isLike, userId)
 
     const runQuery = async (errHandlerCallback) => {
       try {
