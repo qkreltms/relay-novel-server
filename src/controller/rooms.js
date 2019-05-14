@@ -106,13 +106,32 @@ module.exports = (pool) => {
     const limit = req.query.limit || 30
 
     const runQuery = async (errHandlerCallback) => {
+      const conn = await pool.getConnection()
       try {
-        const sql = `SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE isDeleted = ? ORDER BY createdAt DESC LIMIT ${skip}, ${limit}`
-        const fields = [false]
-        const [result] = await pool.query(sql, fields)
+        await conn.query('START TRANSACTION')
+
+        const sql = `SELECT A.id, writerLimit, tags, title, \`desc\`,\`like\`, creatorId, updatedAt, createdAt, nickname, thumbnail FROM (SELECT id, writerLimit, tags, title, \`desc\`, \`like\`, creatorId, updatedAt, createdAt FROM rooms WHERE isDeleted = false LIMIT ${skip}, ${limit}) AS A JOIN (SELECT id, nickname, thumbnail FROM users WHERE isDeleted = false) AS B ON A.creatorId = B.id ORDER BY A.createdAt DESC`
+        let [result] = await conn.query(sql)
+
+        // 결과 값을 프론트의 Room 모델과 맞춰주는 과정
+        result = result.map(room => {
+          room.user = {
+            nickname: room.nickname,
+            thumbnail: room.thumbnail
+          }
+          delete room.nickname
+          delete room.thumbnail
+          return room
+        })
+
+        await conn.query('COMMIT')
+        await conn.release()
 
         return res.json(messages.SUCCESS(result))
       } catch (err) {
+        await conn.query('ROLLBACK')
+        await conn.release()
+
         return errHandlerCallback(err)
       }
     }
