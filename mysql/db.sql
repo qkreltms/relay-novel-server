@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `relay_novel`.`Rooms` (
   `coverImage` VARCHAR(255) NULL,
   `creatorId` INT NOT NULL,
   `like` INT UNSIGNED NOT NULL DEFAULT 0,
+  `restSpace` INT UNSIGNED NOT NULL DEFAULT 1,
   `updatedAt` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `isDeleted` TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -280,21 +281,6 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `relay_novel`.`RoomJoinedUsersInfo`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `relay_novel`.`RoomJoinedUsersInfo` (
-  `roomId` INT NOT NULL,
-  `total` INT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (`roomId`),
-  CONSTRAINT `fk_roomJoinedUsersInfo_roomId`
-    FOREIGN KEY (`roomId`)
-    REFERENCES `relay_novel`.`Rooms` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `relay_novel`.`CommentsInfo`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `relay_novel`.`CommentsInfo` (
@@ -312,17 +298,11 @@ USE `relay_novel`;
 
 DELIMITER $$
 USE `relay_novel`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`Rooms_AFTER_INSERT` AFTER INSERT ON `Rooms` FOR EACH ROW
-BEGIN
-	UPDATE roomsInfo SET `total` = `total` + 1 WHERE id = 0;
-END$$
-
-USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_BEFORE_INSERT` BEFORE INSERT ON `RoomJoinedUsers` FOR EACH ROW
     BEGIN
     DECLARE totalOfPeople INT UNSIGNED DEFAULT 0;
     DECLARE limitOfSpace INT UNSIGNED DEFAULT 0;
-        SET totalOfPeople := (SELECT total FROM roomjoinedusersinfo WHERE roomId = NEW.roomId);
+        SET totalOfPeople := (SELECT restSpace FROM rooms WHERE id = NEW.roomId);
         SET limitOfSpace := (SELECT writerLimit FROM rooms WHERE id = NEW.roomId);
         
         # 방이 꽉차면 유저는 들어올 수 없음
@@ -335,7 +315,7 @@ CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_BEFORE_INSE
 USE `relay_novel`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `relay_novel`.`RoomJoinedUsers_AFTER_INSERT` AFTER INSERT ON `RoomJoinedUsers` FOR EACH ROW
 BEGIN
-	UPDATE roomJoinedUsersInfo SET `total` = `total` + 1 WHERE roomId = NEW.roomId;
+	UPDATE rooms SET `restSpace` = `restSpace` + 1 WHERE id = NEW.roomId;
 END$$
 
 USE `relay_novel`$$

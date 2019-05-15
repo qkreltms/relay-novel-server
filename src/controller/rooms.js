@@ -32,12 +32,8 @@ module.exports = (pool) => {
 
       try {
         await conn.query('START TRANSACTION')
-        const sql2 = `SELECT total FROM roomJoinedUsersInfo WHERE roomId = ?`
-        const fields2 = [roomId]
-        result.joinedUserTotal = await conn.query(sql2, fields2)
-        result.joinedUserTotal = result.joinedUserTotal[0][0].total
 
-        const sql5 = `SELECT tags, genre, createdAt, \`like\`, writerLimit, tags, title, genre, \`desc\`, coverImage, creatorId FROM rooms WHERE id = ?`
+        const sql5 = `SELECT tags, restSpace, genre, createdAt, \`like\`, writerLimit, tags, title, genre, \`desc\`, coverImage, creatorId FROM rooms WHERE id = ?`
         const field5 = [roomId]
         const [[roomInfo]] = await conn.query(sql5, field5)
         const creatorId = roomInfo.creatorId
@@ -51,6 +47,7 @@ module.exports = (pool) => {
         result.like = roomInfo.like
         result.genre = roomInfo.genre
         result.tags = roomInfo.tags
+        result.joinedUserTotal = roomInfo.restSpace
 
         const sql7 = `SELECT nickname, thumbnail FROM users WHERE id = ?`
         const field7 = [creatorId]
@@ -213,33 +210,6 @@ module.exports = (pool) => {
     return runQuery(errHandler(res))
   })
 
-  // @desc : 방 참가 가능한 슬롯 출력
-  // @url : http://localhost:3001/api/rooms/available_slot
-  // @method : GET
-  // @query : roomId: string
-  api.get('/joinedUser/total', (req, res) => {
-    const roomId = req.query.roomId
-
-    const runQuery = async (errHandlerCallback) => {
-      try {
-        const sql = `SELECT total FROM roomJoinedUsersInfo WHERE roomId = ?`
-        const fields = [roomId]
-        const [result] = await pool.query(sql, fields)
-
-        let joinedUserTotal = 0
-        if (result[0]) {
-          joinedUserTotal = result[0].total
-        }
-
-        return res.json(messages.SUCCESS({ joinedUserTotal: joinedUserTotal }))
-      } catch (err) {
-        return errHandlerCallback(err)
-      }
-    }
-
-    return runQuery(errHandler(res))
-  })
-
   // @desc : 방 인원 제한 출력
   // @url : http://localhost:3001/api/rooms/writerLimit
   // @method : GET
@@ -352,12 +322,6 @@ module.exports = (pool) => {
           insertId
         }] = await conn.query(sql, fields)
         const createdRoomId = insertId
-
-        const sql4 = `INSERT INTO roomJoinedUsersInfo SET ?`
-        const fields4 = {
-          roomId: createdRoomId
-        }
-        await conn.query(sql4, fields4)
 
         const sql2 = 'INSERT INTO roomJoinedUsers(userId, roomId, writeable) VALUES (?, ?, ?) '
         const fields2 = [
